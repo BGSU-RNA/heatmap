@@ -1,0 +1,38 @@
+<div class='panel panel-default'>
+  <div class='panel-heading'>
+    Family: <strong>{{family}}</strong>
+
+    <!-- <div class='input-group'> -->
+    <!--   <div class='input-group-btn'> -->
+    <!--    <button type="button" class="btn btn-default dropdown-toggle pull-right" -->
+    <!--      data-toggle="dropdown">{{family}}<span class="caret"></span></button> -->
+    <!--   <ul class="dropdown-menu pull-right" role="menu"> -->
+    <!--     <li><a href="#">tHH</a></li> -->
+    <!--     <li><a href="#">cHH</a></li> -->
+    <!--   </ul> -->
+    <!-- </div> -->
+  <!-- </div> -->
+
+  </div>
+  <table class='table table-bordered table-hover table-condensed'>
+    <thead>
+      <tr>
+        <th>Sequence</th>
+        <th>IDI Group</th>
+        <th>Nucleotide 1</th>
+        <th>Nucleotide 2</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {{#each nts}}
+      <tr id='row-{{sequence}}' class='jmol-toggle' data-unit-ids='{{nt1}},{{nt2}}'>
+        <td>{{sequence}}</td>
+        <td>{{group}}</td>
+        <td>{{nt1}}</td>
+        <td>{{nt2}}</td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>

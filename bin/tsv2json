@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+import os
+import re
+import csv
+import sys
+import json
+
+import requests as req
+from bs4 import BeautifulSoup
+
+URL = 'http://rna.bgsu.edu/experiments/jsmol/Basepair_%s_family.htm'
+
+
+def load_data(raw, family):
+    reader = csv.DictReader(raw, delimiter='\t')
+    data = []
+    for row in reader:
+        for key, value in row.items():
+            if re.match('^[ACGU]{2}$', key):
+                data.append({
+                    'group': row['Updated Isosteric Groups'],
+                    'first': row[family],
+                    'second': key,
+                    'idi': float(value)
+                })
+
+    return {'pairs': data}
+
+
+def load_exemplars(family):
+    url = URL % family
+    response = req.get(url)
+    soup = BeautifulSoup(response.text)
+    data = {}
+    for element in soup.findAll('input', {'class': 'jmolInline'}):
+        content = element.string.split(' ')
+        nts = element['data-coord'].split(',')
+        data[content[1]] = nts
+    return data
+
+
+def save(data):
+    json.dump(data, sys.stdout)
+
+
+def main(filename):
+    name = os.path.basename(filename)[0:3]
+    with open(filename, 'rb') as raw:
+        pairs = load_data(raw, name)
+    nts = load_exemplars(name)
+    data = {
+        'nts': nts,
+        'pairs': pairs
+    }
+    save(data)
+
+if __name__ == '__main__':
+    main(sys.argv[1])
