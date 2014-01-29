@@ -21,9 +21,19 @@
       <div class='col-md-3'>
         <h4>Select a Family</h4>
 
-          <select class='chosen-select' tabindex="-1">
+          <select id='family-selector' class='chosen-select' tabindex="-1">
+            <option value='cWW' selected>cis Watson/Watson</option>
+            <option value='tWW'>trans Watson/Watson</option>
+            <option value='cWS'>cis Watson/Sugar</option>
+            <option value='tWS'>trans Watson/Sugar</option>
+            <option value='cWH'>cis Watson/Hoogesteen</option>
+            <option value='tWH'>trans Watson/Hoogesteen</option>
+            <option value='cSS'>cis Sugar/Sugar</option>
+            <option value='tSS'>trans Sugar/Sugar</option>
+            <option value='cSH'>cis Sugar/Hoogesteen</option>
+            <option value='tSH'>trans Sugar/Hoogesteen</option>
             <option value='cHH'>cis Hoogesteen/Hoogesteen</option>
-            <option value='tHH' selected>trans Hoogesteen/Hoogesteen</option>
+            <option value='tHH'>trans Hoogesteen/Hoogesteen</option>
           </select>
 
       </div>
@@ -41,8 +51,8 @@
             Jmol.getProfile();
 
             var config = {
-              width: 400,
-              height: 400,
+              width: 580,
+              height: 580,
               debug: false,
               // color: "white",
               color: "#F0F0F0",
@@ -58,11 +68,6 @@
 
             // these are conveniences that mimic behavior of Jmol.js and
             // required for jmolTools to work.
-            function jmolCheckbox(script1, script0,text,ischecked) {Jmol.jmolCheckbox(jmolApplet0,script1, script0, text, ischecked)}
-            function jmolButton(script, text) {Jmol.jmolButton(jmolApplet0, script,text)}
-            function jmolHtml(s) { document.write(s) };
-            function jmolBr() { jmolHtml("<br />") }
-            function jmolMenu(a) {Jmol.jmolMenu(jmolApplet0, a)}
             function jmolScript(cmd) {Jmol.script(jmolApplet0, cmd)}
             function jmolScriptWait(cmd) {Jmol.scriptWait(jmolApplet0, cmd)}
           </script>
