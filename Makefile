@@ -8,3 +8,6 @@ data: $(JSON)
 
 static/data/%.json: bin/tsv2json static/data/%.tsv
 	$^ > $@
+
+test:
+	echo "No tests"
