@@ -72,8 +72,10 @@ $(document).ready(function() {
   var loadFamily = function() {
     var name = $("#family-selector").val(),
         url = 'static/data/' + name + '.json';
-    $.get(url, function(raw) {
-      var data = $.parseJSON(raw);
+    $.get(url, function(data) {
+      if (typeof data === "string") {
+        data = $.parseJSON(data);
+      }
       updateTable(name, data);
       heatMap(data);
     });
