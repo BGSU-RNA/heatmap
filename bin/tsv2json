@@ -15,17 +15,27 @@ URL = 'http://rna.bgsu.edu/experiments/jsmol/Basepair_%s_family.htm'
 def load_data(raw, family):
     reader = csv.DictReader(raw, delimiter='\t')
     data = []
+    groups = {}
+    seen = set()
+    fields = {field: index for index, field in enumerate(reader.fieldnames)}
+
+    def func(pair):
+        return (fields[pair['first']], fields[pair['second']])
+
     for row in reader:
         for key, value in row.items():
             if re.match('^[ACGU]{2}$', key):
-                data.append({
-                    'group': row['Updated Isosteric Groups'],
-                    'first': row[family],
-                    'second': key,
-                    'idi': float(value)
-                })
+                unique_key = (row[family], key)
+                if unique_key not in seen:
+                    seen.add(unique_key)
+                    data.append({
+                        'first': row[family],
+                        'second': key,
+                        'idi': float(value)
+                    })
+                    groups[row[family]] = row['Updated Isosteric Groups']
 
-    return {'pairs': data}
+    return sorted(data, key=func), groups
 
 
 def load_exemplars(family):
@@ -47,11 +57,12 @@ def save(data):
 def main(filename):
     name = os.path.basename(filename)[0:3]
     with open(filename, 'rb') as raw:
-        pairs = load_data(raw, name)
+        pairs, groups = load_data(raw, name)
     nts = load_exemplars(name)
     data = {
         'nts': nts,
-        'pairs': pairs
+        'pairs': pairs,
+        'groups': groups
     }
     save(data)
 
