@@ -40,6 +40,7 @@
       });
     } else {
       this.append(compiled[name](data));
+      callback();
     }
   };
 }(jQuery));
