@@ -48,8 +48,6 @@ if ( typeof Object.create !== 'function' ) {
 
       if ( self.loaded ) { return; }
 
-      console.log('ids', ids);
-
       $.ajax({
         url: $.fn.jmolTools.options.serverUrl,
         type: 'POST',
