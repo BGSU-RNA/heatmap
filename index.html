@@ -19,22 +19,39 @@
 
     <div id='family-box' class='row'>
       <div class='col-md-3'>
-        <h4>Select a Family</h4>
 
-          <select id='family-selector' class='chosen-select' tabindex="-1">
-            <option value='cWW' selected>cis Watson/Watson</option>
-            <option value='tWW'>trans Watson/Watson</option>
-            <option value='cWS'>cis Watson/Sugar</option>
-            <option value='tWS'>trans Watson/Sugar</option>
-            <option value='cWH'>cis Watson/Hoogesteen</option>
-            <option value='tWH'>trans Watson/Hoogesteen</option>
-            <option value='cSS'>cis Sugar/Sugar</option>
-            <option value='tSS'>trans Sugar/Sugar</option>
-            <option value='cSH'>cis Sugar/Hoogesteen</option>
-            <option value='tSH'>trans Sugar/Hoogesteen</option>
-            <option value='cHH'>cis Hoogesteen/Hoogesteen</option>
-            <option value='tHH'>trans Hoogesteen/Hoogesteen</option>
-          </select>
+        <div id='select-family'>
+          <div class='panel panel-default'>
+            <div class='panel-heading'><strong>Select a Family</strong></div>
+          <div class='panel-body'>
+            <select id='family-selector' class='chosen-select' tabindex="-1">
+                <option value='cWW' selected>cis Watson/Watson</option>
+                <option value='tWW'>trans Watson/Watson</option>
+                <option value='cWS'>cis Watson/Sugar</option>
+                <option value='tWS'>trans Watson/Sugar</option>
+                <option value='cWH'>cis Watson/Hoogesteen</option>
+                <option value='tWH'>trans Watson/Hoogesteen</option>
+                <option value='cSS'>cis Sugar/Sugar</option>
+                <option value='tSS'>trans Sugar/Sugar</option>
+                <option value='cSH'>cis Sugar/Hoogesteen</option>
+                <option value='tSH'>trans Sugar/Hoogesteen</option>
+                <option value='cHH'>cis Hoogesteen/Hoogesteen</option>
+                <option value='tHH'>trans Hoogesteen/Hoogesteen</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- <div id='ordering'> -->
+        <!--   <h4>Ordering</h4> -->
+        <!--   <select id='ordering-selector' class='chosen-select' tabindex="-1"> -->
+        <!--     <option value='cluster' selected>IDI Cluster</option> -->
+        <!--     <option value='alphabetic'>Alphabetical</option> -->
+        <!--   </select> -->
+        <!-- </div> -->
+
+        <div id='summary'>
+        </div>
 
       </div>
       <div id='table-container' class='col-md-8'></div>

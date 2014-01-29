@@ -28,10 +28,9 @@ $(document).ready(function() {
     $('.jmol-toggle').removeClass('success');
     $('.jmol-toggle').jmolHide();
     $.each(rows, function(_, sequence) {
-      console.log(sequence);
-      $("#row-" + sequence)
-        .addClass('success')
-        .jmolShowOne();
+      var id = 'row-' + sequence;
+      $("#" + id).addClass('success');
+      $.jmolTools.models[id].show();
     });
   };
 
@@ -42,25 +41,46 @@ $(document).ready(function() {
   });
 
   var updateTable = function(name, raw) {
-    var nts = $.map(raw.nts, function(nts, sequence) {
-      return {group: '', sequence: sequence, nt1: nts[0], nt2: nts[1]};
-    });
-    var context = {family: name, nts: nts};
+    var seen = {},
+        nts = $.map(raw.nts, function(nts, sequence) {
+          return {
+            group: raw.groups[sequence],
+            sequence: sequence,
+            nt1: nts[0],
+            nt2: nts[1]
+          };
+        }),
+        context = {family: name, nts: nts},
+        summary = {groups: 0, combinations: nts.length};
 
-    $("#table-container").handlebars("pairs-table", context, jmolWatch);
+    $.each(raw.groups, function(_, group) {
+      if (!seen[group]) {
+        summary.groups += 1;
+        seen[group] = true;
+      }
+    });
+
+    $("#table-container")
+      .empty()
+      .handlebars("pairs-table", context, jmolWatch);
+
+    $("#summary")
+      .empty()
+      .handlebars('summary-template', summary, Object);
   };
 
-  var loadFamily = function(name) {
-    var url = 'static/data/' + name + '.json';
+  var loadFamily = function() {
+    var name = $("#family-selector").val(),
+        url = 'static/data/' + name + '.json';
     $.get(url, function(raw) {
       var data = $.parseJSON(raw);
       updateTable(name, data);
       heatMap(data);
     });
-
   };
 
-  loadFamily('tHH');
   $('.chosen-select').chosen();
+  $('#family-selector').change(loadFamily);
+  loadFamily();
 
 });
