@@ -13,14 +13,20 @@ $(document).ready(function() {
       showAllId: 'jt-all'
     });
 
-    $('.jmol-toggle').on('click', function() {
+    $('.jmol-toggle').on('click', function(event) {
       var $this = $(this);
       if ($this.hasClass('success')) {
         $this.removeClass('success');
-        heatMap.unmark($this.data('unit-ids').split(','));
       } else {
-        $(this).addClass('success');
-        heatMap.mark($this.data('unit-ids').split(','));
+        if (event.shiftKey) {
+          totalRows.push($this.data('sequence'));
+          $(this).addClass('success');
+        } else {
+          totalRows = [$this.data('sequence')];
+          $('.jmol-toggle').removeClass('success');
+          $(this).addClass('success');
+        }
+        heatMap.show(totalRows);
       }
     });
   };
