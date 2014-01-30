@@ -1,7 +1,8 @@
 /*global document, HeatMap, d3, $ */
 $(document).ready(function() {
 
-  var heatMap = HeatMap({ selection: '#heat-map' });
+  var totalRows = [],
+      heatMap = HeatMap({ selection: '#heat-map' });
 
   var jmolWatch = function() {
     $('.jmol-toggle').jmolTools({
@@ -36,8 +37,13 @@ $(document).ready(function() {
 
   heatMap.click(function(d, i) {
     var rows = heatMap.getPairs(d, i);
-    toggleRows(rows);
-    heatMap.show(rows);
+    if (d3.event.shiftKey) {
+      totalRows = totalRows.concat(rows);
+    } else {
+      totalRows = rows;
+    }
+    toggleRows(totalRows);
+    heatMap.show(totalRows);
   });
 
   var updateTable = function(name, raw) {
