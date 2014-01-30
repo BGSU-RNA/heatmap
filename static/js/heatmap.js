@@ -222,7 +222,6 @@
     $.each(sequences, function(_, s) { map[s] = true; });
 
     var pairs = $.map(this.ordered(), function(data, _) {
-      console.log(data);
       if (data.__row === data.__column && map[data.first]) {
         return data;
       }
