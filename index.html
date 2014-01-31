@@ -2,6 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <title>Leontis/Westhof Basepair Catalog</title>
   <link href='static/css/chosen.css' rel='stylesheet'>
   <link href='static/css/bootstrap.min.css' rel='stylesheet'>
   <link href='static/css/main.css' rel='stylesheet'>
@@ -14,62 +15,72 @@
 
   <div id='content' class='container'>
     <div class='page-header'>
-      <h1>Basepair Catalog</h1>
+      <h1>Leontis/Westhof Basepair Catalog</h1>
     </div>
 
-    <div id='family-box' class='row'>
-      <div class='col-md-3'>
+    <div id='about-container' class='row'>
 
-        <div id='select-family'>
-          <div class='panel panel-default'>
-            <div class='panel-heading'><strong>Select a Family</strong></div>
-          <div class='panel-body'>
-            <select id='family-selector' class='chosen-select' tabindex="-1">
-                <option value='cWW' selected>cis Watson/Watson</option>
-                <option value='tWW'>trans Watson/Watson</option>
-                <option value='cWS'>cis Watson/Sugar</option>
-                <option value='tWS'>trans Watson/Sugar</option>
-                <option value='cWH'>cis Watson/Hoogsteen</option>
-                <option value='tWH'>trans Watson/Hoogsteen</option>
-                <option value='cSS'>cis Sugar/Sugar</option>
-                <option value='tSS'>trans Sugar/Sugar</option>
-                <option value='cSH'>cis Sugar/Hoogsteen</option>
-                <option value='tSH'>trans Sugar/Hoogsteen</option>
-                <option value='cHH'>cis Hoogsteen/Hoogsteen</option>
-                <option value='tHH'>trans Hoogsteen/Hoogsteen</option>
-              </select>
-            </div>
-          </div>
+      <div class='col-md-5'>
+        <form role='form' id='select-family' class='form-horizontal' action=''>
+
+            <div class="form-group">
+              <label for='family-selector' class='col-md-4 control-label'>
+                Select a Family
+              </label>
+              <div class='col-md-6'>
+                <select id='family-selector' class='chosen-select'>
+                  <option value='cWW' selected>cis Watson/Watson</option>
+                  <option value='tWW'>trans Watson/Watson</option>
+                  <option value='cWS'>cis Watson/Sugar</option>
+                  <option value='tWS'>trans Watson/Sugar</option>
+                  <option value='cWH'>cis Watson/Hoogsteen</option>
+                  <option value='tWH'>trans Watson/Hoogsteen</option>
+                  <option value='cSS'>cis Sugar/Sugar</option>
+                  <option value='tSS'>trans Sugar/Sugar</option>
+                  <option value='cSH'>cis Sugar/Hoogsteen</option>
+                  <option value='tSH'>trans Sugar/Hoogsteen</option>
+                  <option value='cHH'>cis Hoogsteen/Hoogsteen</option>
+                  <option value='tHH'>trans Hoogsteen/Hoogsteen</option>
+                </select>
+              </div>
+              </div>
+
+              <div class="form-group">
+                <label for='coloring-selector' class='col-md-4 control-label'>
+                  Summarize Using
+                </label>
+                <div class='col-md-6'>
+                  <select id='coloring-selector' class='chosen-select' disabled>
+                    <option value="exemplar" selected>Exemplars</option>
+                    <option value="count">Count</option>
+                    <option value="resolution">Resolution</option>
+                    <option value="distance">C1'-C1' Distance</option>
+                  </select>
+                </div>
+              </div>
+          </form>
         </div>
 
-        <!-- <div id='ordering'> -->
-        <!--   <h4>Ordering</h4> -->
-        <!--   <select id='ordering-selector' class='chosen-select' tabindex="-1"> -->
-        <!--     <option value='cluster' selected>IDI Cluster</option> -->
-        <!--     <option value='alphabetic'>Alphabetical</option> -->
-        <!--   </select> -->
-        <!-- </div> -->
-
-        <div id='summary'>
-        </div>
-
+      <div class='col-md-7'>
+        <p>Some help text</p>
+        <button type='button' class='btn btn-info disabled'>More Help</button>
       </div>
-      <div id='table-container' class='col-md-8'></div>
     </div>
 
     <hr>
 
     <div id='display-container' class='row'>
-      <div id='heat-map' class='col-md-6'></div>
 
-      <div id='visual' class='col-md-6'>
-        <div id='jsmol' class='col-md-6'>
+      <div id='summary-table' class='col-md-4'>
+      </div>
+
+      <div id='jsmol' class='col-md-4'>
           <script type="text/javascript">
             Jmol.getProfile();
 
             var config = {
-              width: 580,
-              height: 580,
+              width: 370,
+              height: 370,
               debug: false,
               // color: "white",
               color: "#F0F0F0",
@@ -96,20 +107,39 @@
           <!--   <button id='jt-numbers' class='btn btn-default'>Numbers</button> -->
           <!--   <button id='jt-stereo' class='btn btn-default'>Stereo</button> -->
           <!-- </form> -->
+      </div>
 
-        </div>
+      <div id='heat-map' class='col-md-4'></div>
+    </div>
+
+    <hr>
+
+    <div id='data-container'>
+      <div id='table-container' class='col-md-9'></div>
+
+      <div id='download-container' class='col-md-3'>
+        <form role='form'>
+          <legend>Download Links</legend>
+          <div class="form-group">
+            <button type='button' class="disabled btn btn-success">Download Selected</button>
+          </div>
+          <div class="form-group">
+            <button type='button' class="disabled btn btn-success">Download All</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
 
-  <script src='static/js/handlebars.js'></script>
-  <script src='static/js/d3.js'></script>
-  <script src='static/js/bootstrap.min.js'></script>
-  <script src='static/js/heatmap.js'></script>
-  <script src='static/js/chosen.jquery.min.js'></script>
-  <script src='static/js/plugins.js'></script>
-  <script src='static/js/jquery.jmolTools.js'></script>
-  <script src='static/js/app.js'></script>
+
+<script src='static/js/handlebars.js'></script>
+<script src='static/js/d3.js'></script>
+<script src='static/js/bootstrap.min.js'></script>
+<script src='static/js/heatmap.js'></script>
+<script src='static/js/chosen.jquery.min.js'></script>
+<script src='static/js/plugins.js'></script>
+<script src='static/js/jquery.jmolTools.js'></script>
+<script src='static/js/app.js'></script>
 
 </body>
 </html>

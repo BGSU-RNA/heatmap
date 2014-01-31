@@ -2,9 +2,10 @@
 $(document).ready(function() {
 
   var totalRows = [],
-      heatMap = HeatMap({ selection: '#heat-map' });
+      heatMap = HeatMap({ size: 300, selection: '#heat-map' }),
+      summary = HeatMap({ size: 300, selection: '#summary-table' });
 
-  var jmolWatch = function() {
+  function jmolWatch() {
     $('.jmol-toggle').jmolTools({
       showStereoId: 'jt-stereo',
       showNumbersId: 'jt-numbers',
@@ -29,9 +30,9 @@ $(document).ready(function() {
         heatMap.show(totalRows);
       }
     });
-  };
+  }
 
-  var toggleRows = function(rows) {
+  function toggleRows(rows) {
     $('.jmol-toggle').removeClass('success');
     $('.jmol-toggle').jmolHide();
     $.each(rows, function(_, sequence) {
@@ -39,10 +40,90 @@ $(document).ready(function() {
       $("#" + id).addClass('success');
       $.jmolTools.models[id].show();
     });
-  };
+  }
+
+  function updateSummary(name, raw) {
+    var nts = ["A", "C", "G", "U"],
+        data = {items: {}, pairs: []},
+        cellSize = summary.cellSize(4),
+        defs = [];
+
+    $.each(nts, function(_, first) {
+      $.each(nts, function(_, second) {
+        var sequence = first + second;
+        if (raw.items.hasOwnProperty(sequence)) {
+          var url = 'static/img/' + name + '/' + name + ' _' + sequence + '_exemplar.png',
+              fillName = name + '-' + sequence + '-basepair';
+
+          defs.push({name: fillName, url: url});
+          data.items[sequence] = {'url': fillName};
+          data.pairs.push({
+            'item1': first, 
+            'item2': second, 
+            'fill': 'url(#' + fillName + ')'
+              });
+        } else {
+          data.items[sequence] = {'url': false};
+          data.pairs.push({
+            'item1': first, 
+            'item2': second, 
+            'fill': 'rgb(242, 222, 222)'
+            });
+        }
+      });
+    });
+
+    summary.addDefinitions(function(svg) {
+      $.each(defs, function(_, def) {
+        svg.append('svg:pattern')
+          .attr('id', def.name)
+          .attr('width', cellSize)
+          .attr('height', cellSize)
+          .attr('patternUnits', 'userSpaceOnUse')
+          .append('svg:image')
+            .attr('xlink:href', def.url)
+            .attr('width', cellSize)
+            .attr('height', cellSize);
+      });
+    });
+
+    summary(data);
+  }
+
+  function updateTable(name, raw) {
+    var nts = $.map(raw.items, function(data, sequence) {
+          console.log(data, sequence);
+          return {
+            group: data.group,
+            sequence: sequence,
+            pdb: data.pdb,
+            resolution: data.resolution,
+            nt1: data.units[0],
+            nt2: data.units[1],
+            count: data.count
+          };
+        });
+
+    $("#table-container")
+      .empty()
+      .handlebars("pairs-table", {family: name, nts: nts}, jmolWatch);
+  }
+
+  function loadFamily() {
+    var name = $("#family-selector").val(),
+        url = 'static/data/' + name + '.json';
+    $.get(url, function(data) {
+      if (typeof data === "string") {
+        data = $.parseJSON(data);
+      }
+      updateTable(name, data);
+      heatMap(data);
+      updateSummary(name, data);
+    });
+  }
 
   heatMap.click(function(d, i) {
-    var rows = heatMap.getPairs(d, i);
+    var rows = heatMap.getPairs()(d, i);
     if (d3.event.shiftKey) {
       totalRows = totalRows.concat(rows);
     } else {
@@ -52,46 +133,9 @@ $(document).ready(function() {
     heatMap.show(totalRows);
   });
 
-  var updateTable = function(name, raw) {
-    var seen = {},
-        nts = $.map(raw.nts, function(nts, sequence) {
-          return {
-            group: raw.groups[sequence],
-            sequence: sequence,
-            nt1: nts[0],
-            nt2: nts[1]
-          };
-        }),
-        context = {family: name, nts: nts},
-        summary = {groups: 0, combinations: nts.length};
-
-    $.each(raw.groups, function(_, group) {
-      if (!seen[group]) {
-        summary.groups += 1;
-        seen[group] = true;
-      }
-    });
-
-    $("#table-container")
-      .empty()
-      .handlebars("pairs-table", context, jmolWatch);
-
-    $("#summary")
-      .empty()
-      .handlebars('summary-template', summary, Object);
-  };
-
-  var loadFamily = function() {
-    var name = $("#family-selector").val(),
-        url = 'static/data/' + name + '.json';
-    $.get(url, function(data) {
-      if (typeof data === "string") {
-        data = $.parseJSON(data);
-      }
-      updateTable(name, data);
-      heatMap(data);
-    });
-  };
+  summary.fillBuilder(function() {
+    return function(d, i) { return d.fill; };
+  });
 
   $('.chosen-select').chosen();
   $('#family-selector').change(loadFamily);

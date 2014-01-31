@@ -12,22 +12,14 @@
       selection.select('svg').remove();
 
       var top = selection.append('svg')
-        .attr('width', plot.size() + margin.left + margin.right)
-        .attr('height', plot.size() + margin.above + margin.below);
+        .attr('width', plot.size() + margin * 2)
+        .attr('height', plot.size() + margin * 2);
 
-      top.append('defs')
-        .append('pattern')
-          .attr('id', 'diagonalHatch')
-          .attr('patternUnits', 'userSpaceOnUse')
-          .attr('width', 4)
-          .attr('height', 4)
-        .append('path')
-          .attr('d', 'M-1,1 l2,-2 M0,4 l4,-4 M3,5 l2,-2')
-          .attr('stroke', '#000000')
-          .attr('stroke-width', 1);
+      plot.addDefinitions()(top.append('svg:defs'));
 
       plot.vis = top.append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.above + ")");
+        .attr("transform", 
+            "translate(" + margin + "," + margin + ")");
 
       plot.draw(data);
 
@@ -39,13 +31,20 @@
     });
 
     plot.generateAccessors($.extend({
-      margin: { left: 30, right: 30, above: 30, below: 30 },
+      margin: 30,
       size:  550,
       selection: null,
       ordered: [],
-      nts: {},
+      items: {},
       pairs: [],
-      click: Object
+      getItemData: function(d) { return d.items; },
+      getPairData: function(d) { return d.pairs; },
+      getFirstItem: function(d) { return d.item1; },
+      getSecondItem: function(d) { return d.item2; },
+      getPairs: function(d) { return [d.item1, d.item2]; },
+      fillBuilder: plot.colorScaleBuilder,
+      click: Object,
+      addDefinitions: Object
     }, config));
 
     return plot;
@@ -53,9 +52,11 @@
 
   window.HeatMap = HeatMap;
 
-  HeatMap.cellSize = function() {
-    var labels = this.labels().length;
-    return (this.size() / labels)
+  HeatMap.cellSize = function(count) {
+    if (arguments.length === 0) {
+      return this.size() / this.labels().length;
+    }
+    return (this.size() / count);
   };
 
   HeatMap.generateAccessors = function(state, callback) {
@@ -79,10 +80,11 @@
 
   HeatMap.labels = function() {
     var seen = {},
-        names = [];
+        names = [],
+        getFirst = this.getFirstItem();
 
     $.each(this.pairs(), function(_, d) {
-      var first = d.first;
+      var first = getFirst(d);
       if (!seen.hasOwnProperty(first)) {
         names.push(first);
         seen[first] = true;
@@ -93,14 +95,13 @@
 
   HeatMap.draw = function(data) {
 
-    var pairs = data.pairs,
-        nts = data.nts;
+    var pairs = this.getPairData()(data),
+        nts = this.getItemData()(data);
 
-    this.nts(nts);
+    this.items(nts);
     this.pairs(pairs);
 
     var cellSize = this.cellSize(),
-        colorScale = this.colorScaleBuilder(),
         labels = this.labels();
 
     // Row Labels
@@ -133,9 +134,11 @@
 
   var ordered = [],
       rowIndex = 0,
-      colIndex = 0;
+      colIndex = 0,
+      getFirst = this.getFirstItem();
   $.each(pairs, function(globalIndex, data) {
-    if (ordered.length > 0 && data.first !== ordered[ordered.length - 1].first) {
+    if (ordered.length > 0 && 
+        getFirst(data) !== getFirst(ordered[ordered.length - 1])) {
       rowIndex += 1;
       colIndex = 0;
     }
@@ -150,7 +153,7 @@
   this.ordered(ordered);
 
   // Draw the boxes
-  var plot = this;
+  var self = this;
   this.vis
     .append("g")
     .attr("class", "cells")
@@ -169,13 +172,10 @@
       .attr("y", function(d, i) { return d.__column * cellSize; })
       .attr("width", cellSize)
       .attr("height", cellSize)
-      .attr("fill", colorScale)
+      .attr("fill", this.fillBuilder()())
       .attr('stroke', 'white')
       .attr('stroke-width', 1)
-      .on('click', function(d, i) {
-        var fn = plot.click();
-        fn.call(plot, d, i, this);
-      });
+      .on('click', self.click());
   };
 
   HeatMap.colorScaleBuilder = function() {
@@ -187,15 +187,15 @@
   };
 
   HeatMap.getPairs = function(d, i) {
+    var getPairs = this.getPairs();
     if (d.__row < d.__column) {
-      return this.range(d.first, d.second);
+      return this.range(getPairs(d, i));
     }
-    return [d.first, d.second];
+    return getPairs(d, i);
   };
 
   HeatMap.mark = function(pairs) {
-    var colorScale = this.colorScaleBuilder(),
-        cellSize = this.cellSize(),
+    var cellSize = this.cellSize(),
         percent = 0.50,
         radius = Math.sqrt(percent * cellSize^2 / Math.PI);
 
@@ -218,11 +218,12 @@
   };
 
   HeatMap.show = function(sequences) {
-    var map = {};
+    var map = {},
+        getFirst = this.getFirstItem();
     $.each(sequences, function(_, s) { map[s] = true; });
 
     var pairs = $.map(this.ordered(), function(data, _) {
-      if (data.__row === data.__column && map[data.first]) {
+      if (data.__row === data.__column && map[getFirst(data)]) {
         return data;
       }
       return null;
@@ -230,19 +231,21 @@
     this.mark(pairs);
   };
 
-  HeatMap.range = function(first, second) {
+  HeatMap.range = function(pair) {
     var ordered = this.ordered(),
         showable = false,
-        seen = {};
+        seen = {},
+        getFirst = this.getFirstItem();
 
     $.each(ordered, function(_, obj) {
-      if (obj.first === first) {
+      var first = getFirst(obj);
+      if (first === pair[0]) {
         showable = true;
       }
       if (showable) {
-        seen[obj.first] = true;
+        seen[first] = true;
       }
-      if (obj.first === second) {
+      if (first === pair[1]) {
         showable = false;
       }
     });

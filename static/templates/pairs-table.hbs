@@ -1,24 +1,16 @@
 <div class='panel panel-default'>
   <div class='panel-heading'>
-    <strong>{{family}}</strong>
-
-    <!-- <div class='input-group'> -->
-    <!--   <div class='input-group-btn'> -->
-    <!--    <button type="button" class="btn btn-default dropdown-toggle pull-right" -->
-    <!--      data-toggle="dropdown">{{family}}<span class="caret"></span></button> -->
-    <!--   <ul class="dropdown-menu pull-right" role="menu"> -->
-    <!--     <li><a href="#">tHH</a></li> -->
-    <!--     <li><a href="#">cHH</a></li> -->
-    <!--   </ul> -->
-    <!-- </div> -->
-  <!-- </div> -->
-
+    <strong>Base Combinations</strong>
   </div>
+
   <table class='table table-bordered table-hover table-condensed'>
     <thead>
       <tr>
         <th>Sequence</th>
         <th>IDI Group</th>
+        <th>Count</th>
+        <th>PDB</th>
+        <th>Resolution</th>
         <th>Nucleotide 1</th>
         <th>Nucleotide 2</th>
       </tr>
@@ -30,6 +22,9 @@
         data-unit-ids='{{nt1}},{{nt2}}' data-sequence='{{sequence}}'>
         <td>{{sequence}}</td>
         <td>{{group}}</td>
+        <td>{{count}}</td>
+        <td>{{pdb}}</td>
+        <td>{{resolution}}</td>
         <td>{{nt1}}</td>
         <td>{{nt2}}</td>
       </tr>
