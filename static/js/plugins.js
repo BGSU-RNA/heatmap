@@ -31,7 +31,7 @@
     var $this = $(this);
 
     if (!compiled.hasOwnProperty(name)) {
-      var url = "static/templates/" + name + ".html";
+      var url = "static/templates/" + name + ".hbs";
       $.get(url, function(template) {
         compiled[name] = Handlebars.compile(template);
         var content = compiled[name](data);
