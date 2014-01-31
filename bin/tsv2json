@@ -6,47 +6,34 @@ import csv
 import sys
 import json
 
-import requests as req
-from bs4 import BeautifulSoup
-
-URL = 'http://rna.bgsu.edu/experiments/jsmol/Basepair_%s_family.htm'
-
 
 def load_data(raw, family):
-    reader = csv.DictReader(raw, delimiter='\t')
-    data = []
-    groups = {}
-    seen = set()
-    fields = {field: index for index, field in enumerate(reader.fieldnames)}
-
-    def func(pair):
-        return (fields[pair['first']], fields[pair['second']])
+    reader = csv.DictReader(raw, delimiter=',')
+    data = {'items': {}, 'pairs': []}
 
     for row in reader:
+        first = row['Base combination']
+        family = row['Family']
+        if family[1] != family[2]:
+            pass
+
+        data['items'][first] = {
+            'units': [row['NT1ID'], row['NT2ID']],
+            'pdb': row['PDBID'],
+            'resolution': row['Resolution'],
+            'group': row['LW 2002 subgroup'],
+            'family': family,
+            'distance': row['C1*-C1* distance'],
+            'count': row['Count']
+        }
         for key, value in row.items():
             if re.match('^[ACGU]{2}$', key):
-                unique_key = (row[family], key)
-                if unique_key not in seen:
-                    seen.add(unique_key)
-                    data.append({
-                        'first': row[family],
-                        'second': key,
-                        'idi': float(value)
-                    })
-                    groups[row[family]] = row['Updated Isosteric Groups']
+                data['pairs'].append({
+                    'idi': row[key],
+                    "item1": first,
+                    "item2": key
+                })
 
-    return sorted(data, key=func), groups
-
-
-def load_exemplars(family):
-    url = URL % family
-    response = req.get(url)
-    soup = BeautifulSoup(response.text)
-    data = {}
-    for element in soup.findAll('input', {'class': 'jmolInline'}):
-        content = element.string.split(' ')
-        nts = element['data-coord'].split(',')
-        data[content[1]] = nts
     return data
 
 
@@ -57,13 +44,7 @@ def save(data):
 def main(filename):
     name = os.path.basename(filename)[0:3]
     with open(filename, 'rb') as raw:
-        pairs, groups = load_data(raw, name)
-    nts = load_exemplars(name)
-    data = {
-        'nts': nts,
-        'pairs': pairs,
-        'groups': groups
-    }
+        data = load_data(raw, name)
     save(data)
 
 if __name__ == '__main__':
