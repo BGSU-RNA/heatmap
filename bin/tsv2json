@@ -16,11 +16,19 @@ def load_data(raw, family):
         family = row['Family']
         if family[1] != family[2]:
             pass
+        pdb = row['PDBID']
+        resolution = row['Resolution']
+        if 'CURATED' in pdb:
+            pdb = pdb.split('_')[1]
+            resolution = row['Resolution']
+        if 'MODEL' in pdb:
+            pdb = 'Modeled'
+            resolution = '-'
 
         data['items'][first] = {
             'units': [row['NT1ID'], row['NT2ID']],
-            'pdb': row['PDBID'],
-            'resolution': row['Resolution'],
+            'pdb': pdb,
+            'resolution': resolution,
             'group': row['LW 2002 subgroup'],
             'family': family,
             'distance': row['C1*-C1* distance'],
