@@ -160,22 +160,45 @@
   };
 
   HeatMapPlot.prototype.drawLegend = function() {
-    var width = this.size() / this.legend().length;
+    var y = this.cellSize() * this.labels().length + 20,
+        size = this.size(),
+        width = size / this.legend().length,
+        legend = this.vis
+          .selectAll('legend')
+          .append('g')
+            .attr('id', 'legend');
 
-    this.vis
-      .selectAll('legend')
-      .append('g')
-        .attr('class', 'legend')
-        .data(this.legend())
-        .enter().append('rect')
-          .attr('id', function(d, i) { return 'legend-' + i; })
-          .attr('class', 'legend-cell')
-          .attr('x', function(d, i) { return width * i; })
-          .attr('y', this.cellSize() * this.labels().length + 10)
-          .attr('width', width)
-          .attr('height', this.legendSize())
-          .attr('stroke-width', 0)
-          .attr('fill', this.fill());
+    legend.append('g')
+      .attr('id', 'legend-cells')
+      .data(this.legend())
+      .enter().append('rect')
+        .attr('id', function(d, i) { return 'legend-' + i; })
+        .attr('class', 'legend-cell')
+        .attr('x', function(d, i) { return width * i; })
+        .attr('y', y)
+        .attr('width', width)
+        .attr('height', this.legendSize())
+        .attr('stroke-width', 0)
+        .attr('fill', this.fill());
+
+
+    var tickCount = 10,
+        values = this.legend().map(function(d, i) { return d.idi; }),
+        scale = d3.scale.linear().domain(values),
+        labelData = scale.ticks(tickCount);
+
+    tickCount = labelData.length;
+
+    console.log(labelData);
+
+    legend.append('g')
+      .attr('id', 'legend-text')
+      .data(labelData)
+      .enter().append('text')
+        .attr('x', function(d, i) { return (size / tickCount) * i; })
+        .attr('y', y - this.legendSize() + 8)
+        .attr('text-anchor', 'middle')
+        .text(function(d, i) { return d; });
 
     $(".legend-cell").tipsy({
       gravity: 'se',
