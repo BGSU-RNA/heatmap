@@ -7,11 +7,13 @@ import sys
 import json
 
 
-def load_data(raw, family):
-    reader = csv.DictReader(raw, delimiter=',')
+def generate_data(header, rows):
     data = {'items': {}, 'pairs': []}
 
-    for row in reader:
+    names = map(lambda r: r[1], rows)
+
+    for row in rows:
+        row = dict(zip(header, row))
         first = row['Base combination']
         family = row['Family']
         if family[1] != family[2]:
@@ -34,8 +36,8 @@ def load_data(raw, family):
             'distance': row['C1*-C1* distance'],
             'count': row['Count']
         }
-        for key, value in row.items():
-            if re.match('^[ACGU]{2}$', key):
+        for key in names:
+            if re.match('^[ACGUacgu]{2}$', key):
                 data['pairs'].append({
                     'idi': row[key],
                     "item1": first,
@@ -45,8 +47,37 @@ def load_data(raw, family):
     return data
 
 
+def load_data(raw, family):
+    reader = csv.reader(raw, delimiter=',')
+    rows = [row for row in reader]
+    header = rows.pop(0)
+
+    sequences = filter(lambda seq: re.match('^[ACGU]{2}$', seq), header)
+    if len(sequences) == len(set(sequences)):
+        return generate_data(header, rows)
+
+    f_index = header.index('Family')
+    c_index = header.index('Base combination')
+
+    offset = header.index(sequences[0])
+    for index, row in enumerate(rows):
+        family = row[f_index]
+        sequence = row[c_index]
+        if family[1] == family[2]:
+            name = sequence
+        elif family[1] == family[1].upper():
+            name = sequence[0] + sequence[1].lower()
+        else:
+            name = sequence[0].lower() + sequence[1]
+        row[c_index] = name
+        header[offset + index] = name
+
+    return generate_data(header, rows)
+
+
 def save(data):
     json.dump(data, sys.stdout)
+    # json.dumps(data)
 
 
 def main(filename):
