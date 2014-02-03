@@ -19,7 +19,7 @@ $(document).ready(function() {
       if ($this.hasClass('success')) {
         $this.removeClass('success');
       } else {
-        if (event.shiftKey) {
+        if (event.ctrlKey || event.metaKey) {
           totalRows.push($this.data('sequence'));
           $(this).addClass('success');
         } else {
@@ -48,8 +48,14 @@ $(document).ready(function() {
         cellSize = summary.cellSize(4),
         defs = [],
         known = {};
-    
-    $.each(raw.items, function(key, _) { known[key.toUpperCase()] = true; });
+
+    $.each(raw.items, function(name, _) {
+      var key = name.toUpperCase();
+      if (!known[key]) {
+        known[key] = [];
+      }
+      known[key].push(name);
+    });
 
     $.each(nts, function(_, first) {
       $.each(nts, function(_, second) {
@@ -61,15 +67,15 @@ $(document).ready(function() {
           defs.push({name: fillName, url: url});
           data.items[sequence] = {'url': fillName};
           data.pairs.push({
-            'item1': first, 
-            'item2': second, 
+            'item1': first,
+            'item2': second,
             'fill': 'url(#' + fillName + ')'
               });
         } else {
           data.items[sequence] = {'url': false};
           data.pairs.push({
-            'item1': first, 
-            'item2': second, 
+            'item1': first,
+            'item2': second,
             'fill': 'rgb(242, 222, 222)'
             });
         }
@@ -126,7 +132,7 @@ $(document).ready(function() {
 
   heatMap.click(function(d, i) {
     var rows = heatMap.getPairs()(d, i);
-    if (d3.event.shiftKey) {
+    if (d3.event.ctrlKey || d3.event.metaKey) {
       totalRows = totalRows.concat(rows);
     } else {
       totalRows = rows;
