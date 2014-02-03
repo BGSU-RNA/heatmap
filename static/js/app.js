@@ -42,58 +42,6 @@ $(document).ready(function() {
     });
   }
 
-  function updateSummary(name, raw) {
-    var nts = ["A", "C", "G", "U"],
-        data = {items: {}, pairs: []},
-        cellSize = summary.cellSize(4),
-        defs = [],
-        known = {};
-
-    $.each(raw.items, function(name, _) {
-      var key = name.toUpperCase();
-      if (!known[key]) {
-        known[key] = [];
-      }
-      known[key].push(name);
-    });
-
-    $.each(nts, function(_, first) {
-      $.each(nts, function(_, second) {
-        var sequence = first + second,
-            fill = 'rgb(242, 222, 222)';
-
-        if (known.hasOwnProperty(sequence)) {
-          var url = 'static/img/' + name + '/' + name + ' _' + sequence + '_exemplar.png',
-              fillName = name + '-' + sequence + '-basepair';
-
-          defs.push({name: fillName, url: url});
-          fill = 'url(#' + fillName + ')';
-        }
-
-        data.items[sequence] = {'url': fill};
-        data.pairs.push({'items': [first, second], 'fill': fill});
-      });
-    });
-
-    summary.addDefinitions(function(svg) {
-      $.each(defs, function(_, def) {
-        svg.append('svg:pattern')
-          .attr('id', def.name)
-          .attr('width', cellSize)
-          .attr('height', cellSize)
-          .attr('patternUnits', 'userSpaceOnUse')
-          .append('svg:image')
-            .attr('xlink:href', def.url)
-            .attr('width', cellSize)
-            .attr('height', cellSize);
-      });
-    });
-
-    summary
-      .pairs(data.pairs)
-      .draw();
-  }
-
   function updateTable(name, raw) {
     var nts = $.map(raw.items, function(data, sequence) {
           return {
@@ -120,6 +68,71 @@ $(document).ready(function() {
       .handlebars("pairs-table", {family: name, nts: nts}, jmolWatch);
   }
 
+  function updateSummary() {
+    var name = $("#coloring-selector").val(),
+        fn = Object;
+    
+    if (name === 'exemplar') {
+      fn = function(d, i) { return d.image; };
+    }
+
+    summary.fill(fn);
+  }
+
+  function setUpSummary(family) {
+    var fillFn = Object,
+        known = heatMap.known(),
+        nts = ["A", "C", "G", "U"],
+        data = [],
+        defs = [],
+        cellSize = summary.cellSize(4);
+
+    $.each(nts, function(_, first) {
+      $.each(nts, function(_, second) {
+        var sequence = first + second,
+            imageFill = 'rgb(242, 222, 222)',
+            count = 0,
+            resolution = 0,
+            distance = 0;
+        if (known.hasOwnProperty(sequence)) {
+          var url = 'static/img/' + family + '/' + family + ' _' + sequence + '_exemplar.png',
+              fillName = family + '-' + sequence + '-basepair';
+          imageFill = 'url(#' + fillName + ')';
+          defs.push({name: fillName, url: url});
+        }
+        data.push({
+          'sequence': sequence,
+          'items': [first, second], 
+          'count': count,
+          'resolution': resolution,
+          'distance': distance,
+          'image': imageFill
+        });
+      });
+    });
+
+    updateSummary();
+
+    summary.addDefinitions(function(svg) {
+      $.each(defs, function(_, def) {
+        svg.append('svg:pattern')
+          .attr('id', def.name)
+          .attr('width', cellSize)
+          .attr('height', cellSize)
+          .attr('patternUnits', 'userSpaceOnUse')
+          .append('svg:image')
+            .attr('xlink:href', def.url)
+            .attr('width', cellSize)
+            .attr('height', cellSize);
+      });
+    });
+
+    summary
+      .pairs(data)
+      .draw();
+  }
+
+
   function loadFamily() {
     var name = $("#family-selector").val(),
         url = 'static/data/' + name + '.json';
@@ -131,12 +144,11 @@ $(document).ready(function() {
       heatMap
         .pairs(data.pairs)
         .draw();
-      updateSummary(name, data);
+      setUpSummary(name);
     });
   }
 
-  heatMap.click(function(d, i) {
-    var rows = heatMap.getPairsInRange(d, i);
+  function mapClick(rows) {
     if (d3.event.ctrlKey || d3.event.metaKey) {
       totalRows = totalRows.concat(rows);
     } else {
@@ -144,13 +156,15 @@ $(document).ready(function() {
     }
     toggleRows(totalRows);
     heatMap.show(totalRows);
-  });
+  }
 
-  summary.fillBuilder(function() {
-    return function(d, i) { return d.fill; };
+  heatMap.click(function(d, i) {
+    mapClick(heatMap.getPairsInRange(d, i));
   });
 
   summary.click(function(d, i) {
+    var known = heatMap.known();
+    mapClick(known[d.sequence]);
   });
 
   $('.chosen-select').chosen();
