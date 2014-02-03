@@ -2,32 +2,84 @@
   'use strict';
   /*globals window, d3, document, $, jmolApplet, jmolScript */
 
-  function accessor(initial) {
-    return (function() {
-      var value = initial;
-      return function(x) {
-        if (!arguments.length) {
-          return value;
-        }
-        value = x;
-        return this;
-      };
-    }());
-  }
+  var HeatMap = window.HeatMap || function(config) {
 
-  function HeatMapPlot() { }
+    var plot = function() {
 
-  HeatMapPlot.prototype.cellSize = function(count) {
+      var margin = plot.margin(),
+          selection = d3.select(plot.selection());
+
+      selection.select('svg').remove();
+
+      var top = selection.append('svg')
+        .attr('width', plot.size() + margin * 2)
+        .attr('height', plot.size() + margin * 2);
+
+      plot.addDefinitions()(top.append('svg:defs'));
+
+      plot.vis = top.append("g")
+        .attr("transform", 
+            "translate(" + margin + "," + margin + ")");
+
+      plot.draw();
+
+      return plot;
+    };
+
+    $.each(HeatMap, function(name, fn) {
+      plot[name] = fn.bind(plot);
+    });
+
+    plot.generateAccessors($.extend({
+      margin: 30,
+      size:  550,
+      selection: null,
+      ordered: [],
+      items: {},
+      pairs: [],
+      getFirstItem: function(d) { return d.items[0]; },
+      getSecondItem: function(d) { return d.items[1]; },
+      getPairs: function(d) { return d.items; },
+      fillBuilder: plot.colorScaleBuilder,
+      click: Object,
+      addDefinitions: Object
+    }, config));
+
+    return plot;
+  };
+
+  window.HeatMap = HeatMap;
+
+  HeatMap.cellSize = function(count) {
     if (arguments.length === 0) {
       return this.size() / this.labels().length;
     }
     return (this.size() / count);
   };
 
+  HeatMap.generateAccessors = function(state, callback) {
+    var obj = this;
+    $.each(state, function(key, value) {
+      obj[key] = (function() {
+        return function(x) {
+          if (!arguments.length) {
+            return state[key];
+          }
+          var old = state[key];
+          state[key] = x;
+          if (callback && callback[key]) {
+            callback[key](old, x);
+          }
+          return obj;
+        };
+      }());
+    });
+  };
+
   HeatMap.labels = function() {
     var seen = {},
         names = [],
-        getFirst = this.pairs.getFirst();
+        getFirst = this.getFirstItem();
 
     $.each(this.pairs(), function(_, d) {
       var first = getFirst(d);
@@ -39,7 +91,7 @@
     return names;
   };
 
-  HeatMapPlot.prototype.drawLabels = function() {
+  HeatMap.drawLabels = function() {
     var cellSize = this.cellSize(),
         labels = this.labels();
 
@@ -72,15 +124,14 @@
         .attr("transform", "translate(" + cellSize/2 + ",-6) rotate (-90)");
   };
 
-  HeatMapPlot.prototype.drawCells = function() {
-    var pairs = this.items(),
-        cellSize = this.cellSize()(),
+  HeatMap.drawCells = function() {
+    var cellSize = this.cellSize(),
         ordered = [],
         rowIndex = 0,
         colIndex = 0,
-        getFirst = this.pairs.getFirst();
+        getFirst = this.getFirstItem();
 
-    $.each(pairs, function(globalIndex, data) {
+    $.each(this.pairs(), function(globalIndex, data) {
       if (ordered.length > 0 && 
           getFirst(data) !== getFirst(ordered[ordered.length - 1])) {
         rowIndex += 1;
@@ -122,12 +173,30 @@
         .on('click', self.click());
   };
 
-  HeatMapPlot.prototype.draw = function() {
+  HeatMap.draw = function() {
+
+    var margin = this.margin(),
+        selection = d3.select(this.selection());
+
+    selection.select('svg').remove();
+
+    var top = selection.append('svg')
+      .attr('width', this.size() + margin * 2)
+      .attr('height', this.size() + margin * 2);
+
+    this.addDefinitions()(top.append('svg:defs'));
+
+    this.vis = top.append("g")
+      .attr("transform", 
+          "translate(" + margin + "," + margin + ")");
+
     this.drawLabels();
     this.drawCells();
+
+    return this;
   };
 
-  HeatMapPlot.prototype.colorScaleBuilder = function() {
+  HeatMap.colorScaleBuilder = function() {
     var scale = d3.scale.linear()
       .domain([0, 2, 3, 100])
       .range(["#d7191c", "#fdae61", "#abd9e9", "#2c7bb6"]);
@@ -135,7 +204,7 @@
     return function(d, i) { return scale(d.idi); };
   };
 
-  HeatMapPlot.prototype.getPairs = function(d, i) {
+  HeatMap.getPairs = function(d, i) {
     var getPairs = this.getPairs();
     if (d.__row < d.__column) {
       return this.range(getPairs(d, i));
@@ -143,7 +212,7 @@
     return getPairs(d, i);
   };
 
-  HeatMapPlot.prototype.mark = function(pairs) {
+  HeatMap.mark = function(pairs) {
     var cellSize = this.cellSize(),
         percent = 0.50,
         radius = Math.sqrt(percent * cellSize^2 / Math.PI);
@@ -166,9 +235,9 @@
         .attr('fill', 'black');
   };
 
-  HeatMapPlot.prototype.show = function(sequences) {
+  HeatMap.show = function(sequences) {
     var map = {},
-        getFirst = this.pairs.getFirst();
+        getFirst = this.getFirstItem();
     $.each(sequences, function(_, s) { map[s] = true; });
 
     var pairs = $.map(this.ordered(), function(data, _) {
@@ -180,11 +249,11 @@
     this.mark(pairs);
   };
 
-  HeatMapPlot.prototype.range = function(pair) {
+  HeatMap.range = function(pair) {
     var ordered = this.ordered(),
         showable = false,
         seen = {},
-        getFirst = this.pairs.getFirst();
+        getFirst = this.getFirstItem();
 
     $.each(ordered, function(_, obj) {
       var first = getFirst(obj);
@@ -200,58 +269,5 @@
     });
     return $.map(seen, function(_, sequence) { return sequence; });
   };
-
-  HeatMap.items = accessor({});
-  HeatMap.pairs = accessor([]);
-  HeatMap.pairs.getItems = accessor(function(d, i) { return d.items; });
-  HeatMap.pairs.getFirst = accessor(function(d, i) { return d.items[0]; });
-  HeatMap.pairs.getSecond = accessor(function(d, i) { return d.items[1]; });
-
-  var HeatMap = window.HeatMap || function(config) {
-
-    var plot = new HeatMapPlot();
-
-    $.each(HeatMap, function(name, fn) {
-      plot[name] = fn.bind(plot);
-    });
-
-    var defaults = {
-      margin: 30,
-      size:  550,
-      selection: null,
-      ordered: [],
-      getPairs: function(d) { return [d.item1, d.item2]; },
-      fillBuilder: plot.colorScaleBuilder,
-      click: Object,
-      addDefinitions: Object
-    };
-
-    var conf = $.extend({}, defaults, config);
-    $.each(defaults, function(key, value) {
-      plot[key] = accessor(conf[key]);
-    });
-
-    return function() {
-      var margin = plot.margin(),
-          selection = d3.select(plot.selection());
-
-      selection.select('svg').remove();
-
-      var top = selection.append('svg')
-        .attr('width', plot.size() + margin * 2)
-        .attr('height', plot.size() + margin * 2);
-
-      plot.addDefinitions()(top.append('svg:defs'));
-
-      plot.vis = top.append("g")
-        .attr("transform", 
-            "translate(" + margin + "," + margin + ")");
-
-      plot.draw();
-
-    };
-  };
-
-  window.HeatMap = HeatMap;
 
 }());

@@ -89,9 +89,9 @@ $(document).ready(function() {
       });
     });
 
-    summary.data(data.items);
+    summary.items(data.items);
     summary.pairs(data.pairs);
-    summary(data);
+    summary();
   }
 
   function updateTable(name, raw) {
