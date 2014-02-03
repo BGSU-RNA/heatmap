@@ -8,7 +8,7 @@ all: data
 
 data: $(JSON)
 
-static/data/%.json: bin/tsv2json static/data/%.csv
+static/data/%.json: bin/csv2json static/data/%.csv
 	$^ > $@
 
 test:
