@@ -3,7 +3,7 @@ $(document).ready(function() {
 
   var totalRows = [],
       heatMap = HeatMap({ size: 300, selection: '#heat-map' }),
-      summary = HeatMap({ size: 300, selection: '#summary-table' });
+      summary = HeatMap({ size: 300, selection: '#summary-table', rotateColumns: false });
 
   heatMap.legend($.map(d3.range(0, 5, 0.1), function(idi, i) {
     var label = idi;

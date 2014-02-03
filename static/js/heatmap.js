@@ -33,7 +33,8 @@
           click: Object,
           addDefinitions: Object,
           legend: null,
-          legendSize: 10
+          legendSize: 10,
+          rotateColumns: true
         };
 
     self.pairs = accessor([], function(_, pairs) {
@@ -96,6 +97,14 @@
         .attr("transform", "translate(-6," + cellSize / 1.5 + ")");
 
   // Column Labels
+  var translate = '';
+  if (this.rotateColumns()) {
+    translate = function(d, i) {
+      var x = i * cellSize + (cellSize/2);
+      return "rotate(-90 " + x + ",-2)";
+    };
+  } 
+
   var colLabels = this.vis
     .append("g")
       .selectAll(".col-labels")
@@ -103,11 +112,11 @@
       .enter().append("text")
         .attr('id', function(d, i) { return 'col-label-' + i; })
         .attr('class', function(d, i) { return 'col-labels'; })
-        .text(function (d) { return d; })
-        .attr("x", 0)
-        .attr("y", function (d, i) { return i * cellSize; })
+        .text(String)
+        .attr("x", function (d, i) { return i * cellSize + (cellSize/2); })
+        .attr("y", -2)
         .style("text-anchor", "left")
-        .attr("transform", "translate(" + cellSize/2 + ",-6) rotate (-90)");
+        .attr("transform", translate);
   };
 
   HeatMapPlot.prototype.drawCells = function() {
