@@ -21,7 +21,6 @@
         size:  550,
         selection: null,
         ordered: [],
-        items: {},
         pairs: [],
         getFirstItem: function(d) { return d.items[0]; },
         getSecondItem: function(d) { return d.items[1]; },
@@ -171,12 +170,12 @@
     return function(d, i) { return scale(d.idi); };
   };
 
-  HeatMapPlot.prototype.getPairs = function(d, i) {
-    var getPairs = this.getPairs();
+  HeatMapPlot.prototype.getPairsInRange = function(d, i) {
+    var getItems = this.getItems();
     if (d.__row < d.__column) {
-      return this.range(getPairs(d, i));
+      return this.range(getItems(d, i));
     }
-    return getPairs(d, i);
+    return getItems(d, i);
   };
 
   HeatMapPlot.prototype.mark = function(pairs) {

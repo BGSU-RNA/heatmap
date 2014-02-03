@@ -89,9 +89,9 @@ $(document).ready(function() {
       });
     });
 
-    summary.items(data.items);
-    summary.pairs(data.pairs);
-    summary();
+    summary
+      .pairs(data.pairs)
+      .draw();
   }
 
   function updateTable(name, raw) {
@@ -128,15 +128,15 @@ $(document).ready(function() {
         data = $.parseJSON(data);
       }
       updateTable(name, data);
-      heatMap.items(data.items);
-      heatMap.pairs(data.pairs);
-      heatMap();
+      heatMap
+        .pairs(data.pairs)
+        .draw();
       updateSummary(name, data);
     });
   }
 
   heatMap.click(function(d, i) {
-    var rows = heatMap.getPairs()(d, i);
+    var rows = heatMap.getPairsInRange(d, i);
     if (d3.event.ctrlKey || d3.event.metaKey) {
       totalRows = totalRows.concat(rows);
     } else {
