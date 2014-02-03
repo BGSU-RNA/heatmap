@@ -31,7 +31,9 @@
           getItems: function(d) { return d.items; },
           fill: this.colorScale(),
           click: Object,
-          addDefinitions: Object
+          addDefinitions: Object,
+          legend: null,
+          legendSize: 10
         };
 
     self.pairs = accessor([], function(_, pairs) {
@@ -157,6 +159,33 @@
         .on('click', self.click());
   };
 
+  HeatMapPlot.prototype.drawLegend = function() {
+    var width = this.size() / this.legend().length;
+
+    this.vis
+      .selectAll('legend')
+      .append('g')
+        .attr('class', 'legend')
+        .data(this.legend())
+        .enter().append('rect')
+          .attr('id', function(d, i) { return 'legend-' + i; })
+          .attr('class', 'legend-cell')
+          .attr('x', function(d, i) { return width * i; })
+          .attr('y', this.cellSize() * this.labels().length + 10)
+          .attr('width', width)
+          .attr('height', this.legendSize())
+          .attr('stroke-width', 0)
+          .attr('fill', this.fill());
+
+    $(".legend-cell").tipsy({
+      gravity: 'se',
+      html: 'true',
+      title: function() {
+        return this.__data__.label;
+      }
+    });
+  };
+
   HeatMapPlot.prototype.draw = function() {
     var margin = this.margin(),
         selection = d3.select(this.selection());
@@ -175,6 +204,9 @@
 
     this.drawLabels();
     this.drawCells();
+    if (this.legend()) {
+      this.drawLegend();
+    }
 
     return this;
   };
@@ -182,9 +214,20 @@
   HeatMapPlot.prototype.colorScale = function() {
     var scale = d3.scale.linear()
       .domain([0, 2, 3, 100])
-      .range(["#d7191c", "#fdae61", "#abd9e9", "#2c7bb6"]);
+      .range(["#D7191C", "#FDAE61", "#ABD9E9", "#2C7BB6"]);
 
-    return function(d, i) { return scale(d.idi); };
+    var isoInterp = d3.interpolateRgb("#B10026", "#E31A1C"),
+        nearInterp = d3.interpolateRgb("#FC4E2A", "#FD8D3C");
+
+    return function(d, i) { 
+      if (d.idi <= 3) {
+        return isoInterp(d.idi);
+      }
+      if (d.idi < 4) {
+        return nearInterp(d.idi);
+      }
+      return '#4EB3D3';
+    };
   };
 
   HeatMapPlot.prototype.getPairsInRange = function(d, i) {
@@ -254,9 +297,6 @@
       }
     });
     return $.map(seen, function(_, sequence) { return sequence; });
-  };
-
-  HeatMapPlot.prototype.knownItem = function(item) {
   };
 
   var HeatMap = window.HeatMap || function(config) {

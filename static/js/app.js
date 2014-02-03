@@ -5,6 +5,15 @@ $(document).ready(function() {
       heatMap = HeatMap({ size: 300, selection: '#heat-map' }),
       summary = HeatMap({ size: 300, selection: '#summary-table' });
 
+  heatMap.legend($.map(d3.range(0, 5, 0.1), function(idi, i) {
+    var label = idi;
+    if (idi === 4.9) {
+      label = '>' + idi;
+    }
+    label = 'IDI: ' + label;
+    return {'idi': idi, 'label': label};
+  }));
+
   function jmolWatch() {
     $('.jmol-toggle').jmolTools({
       showStereoId: 'jt-stereo',
@@ -144,6 +153,16 @@ $(document).ready(function() {
       heatMap
         .pairs(data.pairs)
         .draw();
+
+      $("#heat-map .cell").tipsy({
+        gravity: 's',
+        html: true,
+        title: function() {
+          var data = this.__data__;
+          return '<span>' + data.items.join(' ') + ': ' + data.idi.toFixed(2) + '</span>';
+        }
+      });
+
       setUpSummary(name);
     });
   }
