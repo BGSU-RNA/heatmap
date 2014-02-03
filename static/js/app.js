@@ -46,12 +46,15 @@ $(document).ready(function() {
     var nts = ["A", "C", "G", "U"],
         data = {items: {}, pairs: []},
         cellSize = summary.cellSize(4),
-        defs = [];
+        defs = [],
+        known = {};
+    
+    $.each(raw.items, function(key, _) { known[key.toUpperCase()] = true; });
 
     $.each(nts, function(_, first) {
       $.each(nts, function(_, second) {
         var sequence = first + second;
-        if (raw.items.hasOwnProperty(sequence)) {
+        if (known.hasOwnProperty(sequence)) {
           var url = 'static/img/' + name + '/' + name + ' _' + sequence + '_exemplar.png',
               fillName = name + '-' + sequence + '-basepair';
 
@@ -92,7 +95,6 @@ $(document).ready(function() {
 
   function updateTable(name, raw) {
     var nts = $.map(raw.items, function(data, sequence) {
-          console.log(data, sequence);
           return {
             group: data.group,
             sequence: sequence,
