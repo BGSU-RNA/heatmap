@@ -189,8 +189,6 @@
 
     tickCount = labelData.length;
 
-    console.log(labelData);
-
     legend.append('g')
       .attr('id', 'legend-text')
       .data(labelData)
