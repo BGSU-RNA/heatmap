@@ -59,26 +59,19 @@ $(document).ready(function() {
 
     $.each(nts, function(_, first) {
       $.each(nts, function(_, second) {
-        var sequence = first + second;
+        var sequence = first + second,
+            fill = 'rgb(242, 222, 222)';
+
         if (known.hasOwnProperty(sequence)) {
           var url = 'static/img/' + name + '/' + name + ' _' + sequence + '_exemplar.png',
               fillName = name + '-' + sequence + '-basepair';
 
           defs.push({name: fillName, url: url});
-          data.items[sequence] = {'url': fillName};
-          data.pairs.push({
-            'item1': first,
-            'item2': second,
-            'fill': 'url(#' + fillName + ')'
-              });
-        } else {
-          data.items[sequence] = {'url': false};
-          data.pairs.push({
-            'item1': first,
-            'item2': second,
-            'fill': 'rgb(242, 222, 222)'
-            });
+          fill = 'url(#' + fillName + ')';
         }
+
+        data.items[sequence] = {'url': fill};
+        data.pairs.push({'items': [first, second], 'fill': fill});
       });
     });
 
@@ -96,6 +89,8 @@ $(document).ready(function() {
       });
     });
 
+    summary.data(data.items);
+    summary.pairs(data.pairs);
     summary(data);
   }
 
@@ -110,7 +105,15 @@ $(document).ready(function() {
             nt2: data.units[1],
             count: data.count
           };
-        });
+        }),
+        order = {};
+    
+    $.each(raw.pairs, function(index, pair) {
+      var key = pair.items[0];
+      order[key] = order[key] || index;
+    });
+
+    nts.sort(function(a, b) { return order[a.sequence] - order[b.sequence]; });
 
     $("#table-container")
       .empty()
@@ -125,7 +128,9 @@ $(document).ready(function() {
         data = $.parseJSON(data);
       }
       updateTable(name, data);
-      heatMap(data);
+      heatMap.items(data.items);
+      heatMap.pairs(data.pairs);
+      heatMap();
       updateSummary(name, data);
     });
   }
@@ -145,8 +150,12 @@ $(document).ready(function() {
     return function(d, i) { return d.fill; };
   });
 
+  summary.click(function(d, i) {
+  });
+
   $('.chosen-select').chosen();
   $('#family-selector').change(loadFamily);
+  $('#coloring-selector').change(updateSummary);
   loadFamily();
 
 });

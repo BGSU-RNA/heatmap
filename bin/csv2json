@@ -40,8 +40,7 @@ def generate_data(header, rows):
             if re.match('^[ACGUacgu]{2}$', key):
                 data['pairs'].append({
                     'idi': row[key],
-                    "item1": first,
-                    "item2": key
+                    'items': [first, key]
                 })
 
     return data
