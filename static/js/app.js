@@ -100,9 +100,6 @@ $(document).ready(function() {
 
       var fn = function(d, i) { 
         var value = d[attr];
-        if (!d.label && attr === 'resolution') {
-          console.log(d, d.resolution, scale(d.resolution));
-        }
         if (!d.exists) {
           return missingGrey;
         }
