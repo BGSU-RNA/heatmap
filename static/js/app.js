@@ -3,6 +3,7 @@ $(document).ready(function() {
 
   var itemData = {},
       totalRows = [],
+      summaryAttributeRanges = {},
       missingGrey = 'grey',
       heatMap = HeatMap({ size: 300, selection: '#heat-map' }),
       summary = HeatMap({ size: 300, selection: '#summary-table', rotateColumns: false });
@@ -87,8 +88,8 @@ $(document).ready(function() {
 
       lengendRange.push(inc);
       var legend = generateLegend(lengendRange, function(value, isLast) {
-        var label = labelText + (isLast ? '>' + value : value);
-        var data = {value: value, label: label};
+        var label = labelText + (isLast ? '>' + value : value),
+            data = {exists: true, value: value, label: label};
         data[attr] = value;
         return data;
       });
@@ -102,7 +103,7 @@ $(document).ready(function() {
         if (!d.label && attr === 'resolution') {
           console.log(d, d.resolution, scale(d.resolution));
         }
-        if (value === -1 || value === null || value === undefined) {
+        if (!d.exists) {
           return missingGrey;
         }
         if (value > max) {
@@ -120,44 +121,29 @@ $(document).ready(function() {
     var name = $("#coloring-selector").val();
 
     if (name === 'exemplar') {
+      summary.legend(null);
       summary.fill(function(d, i) { return d.image; });
 
     } else if (name === 'count') {
-      summarizeRange([0, 300], 1, 'count', 'Count: ');
+      var countMax = d3.min([summaryAttributeRanges.count[1], 400]);
 
+      summarizeRange([0, countMax], 1, 'count', 'Count: ');
     } else if (name === 'resolution') {
       summarizeRange([4, 0], -0.01, 'resolution', 'Resolution: ');
-
-      // scale = d3.scale.linear()
-      //   .domain([4, 0])
-      //   .range(["#2166ac", "#b2182b"])
-      //   // .range(["#99000D", "#FEE5D9"])
-      //   .interpolate(d3.interpolateRgb);
-      // range = scale.domain();
-      // max = range[0.1];
-      // legend = generateLegend(range, function(value, isLast) {
-      //   var label = 'Resolution: ' + (isLast ? '>' + value : value);
-      //   return {'resolution': value, 'value': value, 'label': label};
-      // });
-      // fn = function(d, i) {
-      //   return (d.resolution === -1 ? missingGrey : scale(d.resolution));
-      // };
-
     } 
-
-    // else if (name === 'distance') {
-    //   scale = d3.scale.linear()
-    //     .domain([0, ])
-    //     .range(["#FEE5D9", "#99000D"])
-    //     .interpolate(d3.interpolateRgb);
-    //   fn = function(d, i) { return d.distance; };
-    // }
 
     summary.draw();
 
     $("#summary-table .cell").tipsy({
       gravity: 's',
       html: true,
+      // TODO: Fix computing the offset
+      // offset: function(element) {
+      //   var bbox = this.getBoundingClientRect();
+      //   console.log(bbox);
+      //   console.log('offset', $(this).offset());
+      //   return [bbox.left + bbox.width/2, 10 * bbox.top];
+      // },
       title: function() {
         var data = this.__data__;
         return '<p><span>Count: ' + data.count + '</span></p>' +
@@ -177,11 +163,16 @@ $(document).ready(function() {
 
     var knownValues = function(sequence, name) {
       if (!known[sequence]) {
-        return [-1];
+        return [0];
       }
       return $.map(known[sequence], function(combination, _) {
         return itemData[combination][name];
       });
+    };
+
+    summaryAttributeRanges = {
+      count: [],
+      distance: []
     };
 
     $.each(nts, function(_, first) {
@@ -189,7 +180,6 @@ $(document).ready(function() {
         var sequence = first + second,
             imageFill = missingGrey,
             count = d3.sum(knownValues(sequence, 'count')),
-            resolution = d3.median(knownValues(sequence, 'resolution')),
             distance = d3.median(knownValues(sequence, 'distance'));
 
         if (known.hasOwnProperty(sequence)) {
@@ -198,18 +188,24 @@ $(document).ready(function() {
           imageFill = 'url(#' + fillName + ')';
           defs.push({name: fillName, url: url});
         }
+
+        summaryAttributeRanges.count.push(count);
+        summaryAttributeRanges.distance.push(distance);
+
         data.push({
           'sequence': sequence,
           'items': [first, second],
           'count': count,
-          'resolution': resolution,
+          'resolution': d3.median(knownValues(sequence, 'resolution')),
           'distance': distance,
-          'image': imageFill
+          'image': imageFill,
+          'exists': known.hasOwnProperty(sequence),
         });
       });
     });
 
-    console.log(data);
+    summaryAttributeRanges.count = d3.extent(summaryAttributeRanges.count);
+    summaryAttributeRanges.distance = d3.extent(summaryAttributeRanges.distance);
 
     summary.pairs(data);
 
