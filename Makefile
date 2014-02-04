@@ -1,5 +1,5 @@
-TSV=$(wildcard static/data/*.tsv)
-JSON=$(patsubst %.tsv,%.json,$(TSV))
+CSV=$(wildcard static/data/*.csv)
+JSON=$(patsubst %.csv,%.json,$(CSV))
 NAMES=$(notdir $(basename $(JSON)))
 
 .PHONY: test deploy
