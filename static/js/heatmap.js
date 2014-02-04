@@ -245,10 +245,6 @@
   };
 
   HeatMapPlot.prototype.colorScale = function() {
-    var scale = d3.scale.linear()
-      .domain([0, 2, 3, 100])
-      .range(["#D7191C", "#FDAE61", "#ABD9E9", "#2C7BB6"]);
-
     var isoInterp = d3.interpolateRgb("#B10026", "#E31A1C"),
         nearInterp = d3.interpolateRgb("#FC4E2A", "#FD8D3C");
 
