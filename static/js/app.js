@@ -1,18 +1,18 @@
 /*global document, HeatMap, d3, $ */
 $(document).ready(function() {
 
-  var totalRows = [],
+  var itemData = {},
+      totalRows = [],
+      missingGrey = 'grey',
       heatMap = HeatMap({ size: 300, selection: '#heat-map' }),
       summary = HeatMap({ size: 300, selection: '#summary-table', rotateColumns: false });
 
-  heatMap.legend($.map(d3.range(0, 5, 0.1), function(idi, i) {
-    var label = idi;
-    if (idi === 4.9) {
-      label = '>' + idi;
-    }
-    label = 'IDI: ' + label;
-    return {'idi': idi, 'label': label};
-  }));
+  function generateLegend(range, func) {
+    var last = range[1] - range[2];
+    return $.map(d3.range.apply(null, range), function(value, _) {
+      return func(value, (last - value < 0.0001));
+    });
+  }
 
   function jmolWatch() {
     $('.jmol-toggle').jmolTools({
@@ -64,7 +64,7 @@ $(document).ready(function() {
           };
         }),
         order = {};
-    
+
     $.each(raw.pairs, function(index, pair) {
       var key = pair.items[0];
       order[key] = order[key] || index;
@@ -77,15 +77,94 @@ $(document).ready(function() {
       .handlebars("pairs-table", {family: name, nts: nts}, jmolWatch);
   }
 
-  function updateSummary() {
-    var name = $("#coloring-selector").val(),
-        fn = Object;
-    
-    if (name === 'exemplar') {
-      fn = function(d, i) { return d.image; };
-    }
+  function summarizeRange(domain, inc, attr, labelText) {
+      var lengendRange = domain.slice(0),
+          max = d3.max(domain),
+          scale = d3.scale.linear()
+            .domain(domain)
+            .range(["#2166ac", "#b2182b"])
+            .interpolate(d3.interpolateRgb);
 
-    summary.fill(fn);
+      lengendRange.push(inc);
+      var legend = generateLegend(lengendRange, function(value, isLast) {
+        var label = labelText + (isLast ? '>' + value : value);
+        var data = {value: value, label: label};
+        data[attr] = value;
+        return data;
+      });
+
+      if (inc < 0) {
+        legend.reverse();
+      }
+
+      var fn = function(d, i) { 
+        var value = d[attr];
+        if (!d.label && attr === 'resolution') {
+          console.log(d, d.resolution, scale(d.resolution));
+        }
+        if (value === -1 || value === null || value === undefined) {
+          return missingGrey;
+        }
+        if (value > max) {
+          return scale(max);
+        }
+        return scale(value);
+      };
+
+      summary
+        .legend(legend)
+        .fill(fn);
+  }
+
+  function updateSummary() {
+    var name = $("#coloring-selector").val();
+
+    if (name === 'exemplar') {
+      summary.fill(function(d, i) { return d.image; });
+
+    } else if (name === 'count') {
+      summarizeRange([0, 300], 1, 'count', 'Count: ');
+
+    } else if (name === 'resolution') {
+      summarizeRange([4, 0], -0.01, 'resolution', 'Resolution: ');
+
+      // scale = d3.scale.linear()
+      //   .domain([4, 0])
+      //   .range(["#2166ac", "#b2182b"])
+      //   // .range(["#99000D", "#FEE5D9"])
+      //   .interpolate(d3.interpolateRgb);
+      // range = scale.domain();
+      // max = range[0.1];
+      // legend = generateLegend(range, function(value, isLast) {
+      //   var label = 'Resolution: ' + (isLast ? '>' + value : value);
+      //   return {'resolution': value, 'value': value, 'label': label};
+      // });
+      // fn = function(d, i) {
+      //   return (d.resolution === -1 ? missingGrey : scale(d.resolution));
+      // };
+
+    } 
+
+    // else if (name === 'distance') {
+    //   scale = d3.scale.linear()
+    //     .domain([0, ])
+    //     .range(["#FEE5D9", "#99000D"])
+    //     .interpolate(d3.interpolateRgb);
+    //   fn = function(d, i) { return d.distance; };
+    // }
+
+    summary.draw();
+
+    $("#summary-table .cell").tipsy({
+      gravity: 's',
+      html: true,
+      title: function() {
+        var data = this.__data__;
+        return '<p><span>Count: ' + data.count + '</span></p>' +
+          '<p><span>Resolution: ' + data.resolution + '</span></p>'
+      ;
+      }
+    });
   }
 
   function setUpSummary(family) {
@@ -96,13 +175,23 @@ $(document).ready(function() {
         defs = [],
         cellSize = summary.cellSize(4);
 
+    var knownValues = function(sequence, name) {
+      if (!known[sequence]) {
+        return [-1];
+      }
+      return $.map(known[sequence], function(combination, _) {
+        return itemData[combination][name];
+      });
+    };
+
     $.each(nts, function(_, first) {
       $.each(nts, function(_, second) {
         var sequence = first + second,
-            imageFill = 'rgb(242, 222, 222)',
-            count = 0,
-            resolution = 0,
-            distance = 0;
+            imageFill = missingGrey,
+            count = d3.sum(knownValues(sequence, 'count')),
+            resolution = d3.median(knownValues(sequence, 'resolution')),
+            distance = d3.median(knownValues(sequence, 'distance'));
+
         if (known.hasOwnProperty(sequence)) {
           var url = 'static/img/' + family + '/' + family + ' _' + sequence + '_exemplar.png',
               fillName = family + '-' + sequence + '-basepair';
@@ -111,7 +200,7 @@ $(document).ready(function() {
         }
         data.push({
           'sequence': sequence,
-          'items': [first, second], 
+          'items': [first, second],
           'count': count,
           'resolution': resolution,
           'distance': distance,
@@ -120,7 +209,9 @@ $(document).ready(function() {
       });
     });
 
-    updateSummary();
+    console.log(data);
+
+    summary.pairs(data);
 
     summary.addDefinitions(function(svg) {
       $.each(defs, function(_, def) {
@@ -136,9 +227,7 @@ $(document).ready(function() {
       });
     });
 
-    summary
-      .pairs(data)
-      .draw();
+    updateSummary();
   }
 
 
@@ -149,6 +238,7 @@ $(document).ready(function() {
       if (typeof data === "string") {
         data = $.parseJSON(data);
       }
+      itemData = data.items;
       updateTable(name, data);
       heatMap
         .pairs(data.pairs)
@@ -185,6 +275,11 @@ $(document).ready(function() {
     var known = heatMap.known();
     mapClick(known[d.sequence]);
   });
+
+  heatMap.legend(generateLegend([0, 6, 0.1], function(idi, isLast) {
+    var label = 'IDI: ' + (isLast ? '>' + idi : idi);
+    return {'value': idi, 'idi': idi, 'label': label};
+  }));
 
   $('.chosen-select').chosen();
   $('#family-selector').change(loadFamily);

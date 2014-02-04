@@ -192,7 +192,7 @@
 
 
     var tickCount = 10,
-        values = this.legend().map(function(d, i) { return d.idi; }),
+        values = this.legend().map(function(d, i) { return d.value; }),
         scale = d3.scale.linear().domain(values),
         labelData = scale.ticks(tickCount);
 
@@ -206,9 +206,6 @@
         .attr('y', y - this.legendSize() + 8)
         .attr('text-anchor', 'middle')
         .text(String);
-        // .text(function(d, i) { 
-        //   return (i === (tickCount - 1) ? '> ' + d : d); 
-        // });
 
     $(".legend-cell").tipsy({
       gravity: 'se',
