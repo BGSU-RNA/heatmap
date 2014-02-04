@@ -205,7 +205,10 @@
         .attr('x', function(d, i) { return (size / tickCount) * i; })
         .attr('y', y - this.legendSize() + 8)
         .attr('text-anchor', 'middle')
-        .text(function(d, i) { return d; });
+        .text(String);
+        // .text(function(d, i) { 
+        //   return (i === (tickCount - 1) ? '> ' + d : d); 
+        // });
 
     $(".legend-cell").tipsy({
       gravity: 'se',
@@ -250,13 +253,16 @@
         nearInterp = d3.interpolateRgb("#FC4E2A", "#FD8D3C");
 
     return function(d, i) { 
-      if (d.idi <= 3) {
+      if (d.idi <= 2) {
         return isoInterp(d.idi);
       }
-      if (d.idi < 4) {
+      if (d.idi <= 3.3) {
         return nearInterp(d.idi);
       }
-      return '#4EB3D3';
+      if (d.idi <= 5) {
+        return '#4292c6';
+      }
+      return '#084594';
     };
   };
 
@@ -273,7 +279,7 @@
 
   HeatMapPlot.prototype.mark = function(pairs) {
     var cellSize = this.cellSize(),
-        percent = 0.50,
+        percent = 0.70,
         radius = Math.sqrt(percent * cellSize^2 / Math.PI);
 
     this.vis.selectAll('#diagonal-marks').remove();
