@@ -44,7 +44,6 @@
                 
                 var offset = this.getOffset();
                 var tp;
-                console.log(pos);
                 switch (gravity.charAt(0)) {
                     case 'n':
                         tp = {top: pos.top + pos.height + offset, left: pos.left + pos.width / 2 - actualWidth / 2};
