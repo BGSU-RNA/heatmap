@@ -101,7 +101,7 @@ $(document).ready(function() {
     summary
       .legend(legend)
       .fill(function(d, _) { 
-        if (!d.exists) {
+        if (!d.exists || d[attr] === null) {
           return missingGrey;
         }
         return scale(Math.min(d[attr], max));
@@ -113,12 +113,12 @@ $(document).ready(function() {
 
     if (name === 'exemplar') {
       summary.legend(null);
-      summary.fill(function(d, _) { return d.image; });
+      summary.fill(function(d, _) { return 'url(#' + d.name + ')'; });
 
     } else if (name === 'count') {
       var countMax = d3.min([summaryAttributeRanges.count[1], 400]);
-
       summarizeRange([0, countMax], 1, 'count', 'Count: ');
+
     } else if (name === 'resolution') {
       summarizeRange([4, 0], -0.01, 'resolution', 'Resolution: ');
     } 
@@ -144,59 +144,58 @@ $(document).ready(function() {
     });
   }
 
-  function setUpSummary(family) {
-    var known = heatMap.known(),
-        nts = ["A", "C", "G", "U"],
+  function summarizeItems(family, known, items) {
+
+    var nts = ['A', 'C', 'G', 'U'],
         data = [],
-        defs = [],
-        cellSize = summary.cellSize(4);
-
-    var knownValues = function(sequence, name) {
-      if (!known[sequence]) {
-        return [0];
-      }
-      return $.map(known[sequence], function(combination, _) {
-        return itemData[combination][name];
-      });
-    };
-
-    summaryAttributeRanges = { count: [], distance: [] };
+        knownValues = function(sequence, name) {
+          return $.map(known[sequence], function(combination, _) {
+            return items[combination][name];
+          });
+        };
 
     $.each(nts, function(_, first) {
       $.each(nts, function(_, second) {
         var sequence = first + second,
-            imageFill = missingGrey,
-            count = d3.sum(knownValues(sequence, 'count')),
-            distance = d3.median(knownValues(sequence, 'distance'));
+            entry = {
+              sequence: sequence, 
+              items: [first, second],
+              count: 0, 
+              distance: false, 
+              resolution: false,
+              exists: known.hasOwnProperty(sequence),
+              image: missingGrey
+            };
 
-        if (known.hasOwnProperty(sequence)) {
+
+        if (entry.exists) {
           var url = 'static/img/' + family + '/' + family + ' _' + sequence + '_exemplar.png',
               fillName = family + '-' + sequence + '-basepair';
-          imageFill = 'url(#' + fillName + ')';
-          defs.push({name: fillName, url: url});
+          entry.url = url;
+          entry.name = fillName;
+          entry.count = d3.sum(knownValues(sequence, 'count'));
+          entry.distance = d3.median(knownValues(sequence, 'distance'));
+
+          // Have to deal with modeled things which have no resolution.
+          // This isn't the most elegant but it works.
+          entry.resolution = d3.median(knownValues(sequence, 'resolution'));
+          entry.resolution = entry.resolution || null;
         }
 
-        summaryAttributeRanges.count.push(count);
-        summaryAttributeRanges.distance.push(distance);
-
-        data.push({
-          'sequence': sequence,
-          'items': [first, second],
-          'count': count,
-          'resolution': d3.median(knownValues(sequence, 'resolution')),
-          'distance': distance,
-          'image': imageFill,
-          'exists': known.hasOwnProperty(sequence),
-        });
+        data.push(entry);
       });
     });
 
-    summaryAttributeRanges.count = d3.extent(summaryAttributeRanges.count);
-    summaryAttributeRanges.distance = d3.extent(summaryAttributeRanges.distance);
+    return data;
+  }
 
-    summary.pairs(data);
+  function generateDefs(data) {
+    var defs = $.map(data, function(entry, _) {
+      return (entry.exists ?  {name: entry.name, url: entry.url} : null);
+    });
 
-    summary.addDefinitions(function(svg) {
+    return function(svg) {
+      var cellSize = this.cellSize();
       $.each(defs, function(_, def) {
         svg.append('svg:pattern')
           .attr('id', def.name)
@@ -208,8 +207,16 @@ $(document).ready(function() {
             .attr('width', cellSize)
             .attr('height', cellSize);
       });
-    });
+    };
+  }
 
+  function setUpSummary(family, items) {
+    var known = heatMap.known(),
+        data = summarizeItems(family, known, items),
+        defFn = generateDefs(data);
+
+    summary.addDefinitions(defFn);
+    summary.pairs(data);
     updateSummary();
   }
 
@@ -221,7 +228,6 @@ $(document).ready(function() {
       if (typeof data === "string") {
         data = $.parseJSON(data);
       }
-      itemData = data.items;
       updateTable(name, data);
       heatMap
         .pairs(data.pairs)
@@ -236,7 +242,7 @@ $(document).ready(function() {
         }
       });
 
-      setUpSummary(name);
+      setUpSummary(name, data.items);
     });
   }
 
