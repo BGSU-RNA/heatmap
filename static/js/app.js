@@ -1,4 +1,4 @@
-/*global document, HeatMap, d3, $ */
+/*global document, HeatMap, d3, $, Handlebars */
 $(document).ready(function() {
 
   var itemData = {},
@@ -100,7 +100,7 @@ $(document).ready(function() {
 
     summary
       .legend(legend)
-      .fill(function(d, _) { 
+      .fill(function(d, _) {
         if (!d.exists || d[attr] === null) {
           return missingGrey;
         }
@@ -109,7 +109,13 @@ $(document).ready(function() {
   }
 
   function updateSummary() {
-    var name = $("#coloring-selector").val();
+    var name = $("#coloring-selector").val(),
+        template = null;
+
+    // This should be done before hovering. I hope.
+    $.get('static/templates/exemplar-hover.hbs', function(string) {
+      template = Handlebars.compile(string);
+    });
 
     if (name === 'exemplar') {
       summary.legend(null);
@@ -121,7 +127,7 @@ $(document).ready(function() {
 
     } else if (name === 'resolution') {
       summarizeRange([4, 0], -0.01, 'resolution', 'Resolution: ');
-    } 
+    }
 
     summary.draw();
 
@@ -137,10 +143,9 @@ $(document).ready(function() {
       // },
       title: function() {
         var data = this.__data__,
-            resolution = data.resolution || 'NA';
-        return '<p><span>Count: ' + data.count + '</span></p>' +
-          '<p><span>Resolution: ' + resolution + '</span></p>'
-      ;
+            resolution = data.resolution || 'NA',
+            context = $.extend({}, data, {resolution: resolution});
+        return template(context);
       }
     });
   }
@@ -159,10 +164,10 @@ $(document).ready(function() {
       $.each(nts, function(_, second) {
         var sequence = first + second,
             entry = {
-              sequence: sequence, 
+              sequence: sequence,
               items: [first, second],
-              count: 0, 
-              distance: false, 
+              count: 0,
+              distance: false,
               resolution: false,
               exists: known.hasOwnProperty(sequence),
               image: missingGrey
