@@ -136,9 +136,10 @@ $(document).ready(function() {
       //   return [bbox.left + bbox.width/2, 10 * bbox.top];
       // },
       title: function() {
-        var data = this.__data__;
+        var data = this.__data__,
+            resolution = data.resolution || 'NA';
         return '<p><span>Count: ' + data.count + '</span></p>' +
-          '<p><span>Resolution: ' + data.resolution + '</span></p>'
+          '<p><span>Resolution: ' + resolution + '</span></p>'
       ;
       }
     });
