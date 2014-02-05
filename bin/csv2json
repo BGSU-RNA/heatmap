@@ -6,26 +6,29 @@ import csv
 import sys
 import json
 
+import itertools as it
+
 
 def generate_data(header, rows):
     data = {'items': {}, 'pairs': []}
 
     names = map(lambda r: r[1], rows)
 
-    for row in rows:
-        row = dict(zip(header, row))
+    for row in it.imap(lambda r: dict(it.izip(header, r)), rows):
         first = row['Base combination']
         family = row['Family']
-        if family[1] != family[2]:
-            pass
+
         pdb = row['PDBID']
-        resolution = row['Resolution']
-        if 'CURATED' in pdb:
-            pdb = pdb.split('_')[1]
+        if row['Resolution'] == 'NaN':
+            resolution = None
+        else:
             resolution = float(row['Resolution'])
+
         if 'MODEL' in pdb:
             pdb = 'Modeled'
-            resolution = '-'
+            resolution = None
+        elif 'CURATED' in pdb:
+            pdb = pdb.split('_')[1]
 
         data['items'][first] = {
             'units': [row['NT1ID'], row['NT2ID']],
@@ -62,7 +65,7 @@ def load_data(raw, family):
     for index, row in enumerate(rows):
         family = row[f_index]
         sequence = row[c_index]
-        if family[1] == family[2]:
+        if family[1] == family[2] or family[1].lower() != family[2].lower():
             name = sequence
         elif family[1] == family[1].upper():
             name = sequence[0] + sequence[1].lower()
@@ -76,7 +79,7 @@ def load_data(raw, family):
 
 def save(data):
     json.dump(data, sys.stdout)
-    # json.dumps(data)
+   # json.dumps(data)
 
 
 def main(filename):
