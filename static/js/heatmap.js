@@ -222,11 +222,14 @@
 
     selection.select('svg').remove();
 
-    var top = selection.append('svg')
-      .attr('width', this.size() + margin * 2)
+    var top = selection.append('svg'),
+        defs = top.append('svg:defs'),
+        defFn = this.addDefinitions();
+
+    top.attr('width', this.size() + margin * 2)
       .attr('height', this.size() + margin * 2);
 
-    this.addDefinitions()(top.append('svg:defs'));
+    defFn.call(this, defs);
 
     this.vis = top.append("g")
       .attr("transform", 
