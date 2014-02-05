@@ -129,8 +129,10 @@
     $.each(this.pairs(), function(globalIndex, data) {
       if (ordered.length > 0 && 
           getFirst(data) !== getFirst(ordered[ordered.length - 1])) {
-        rowIndex += 1;
-        colIndex = 0;
+        rowIndex = 0;
+        colIndex += 1;
+        // rowIndex += 1;
+        // colIndex = 0;
       }
       var computed = {
         __current: globalIndex,
@@ -138,7 +140,8 @@
         __column: colIndex
       };
       ordered.push($.extend(computed, data));
-      colIndex += 1;
+      // colIndex += 1;
+      rowIndex += 1;
     });
     this.ordered(ordered);
 
