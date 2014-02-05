@@ -79,39 +79,33 @@ $(document).ready(function() {
   }
 
   function summarizeRange(domain, inc, attr, labelText) {
-      var lengendRange = domain.slice(0),
-          max = d3.max(domain),
-          scale = d3.scale.linear()
-            .domain(domain)
-            .range(["#2166ac", "#b2182b"])
-            .interpolate(d3.interpolateRgb);
+    var lengendRange = domain.slice(0),
+        max = d3.max(domain),
+        scale = d3.scale.linear()
+          .domain(domain)
+          .range(["#2166ac", "#b2182b"])
+          .interpolate(d3.interpolateRgb);
 
-      lengendRange.push(inc);
-      var legend = generateLegend(lengendRange, function(value, isLast) {
-        var label = labelText + (isLast ? '>' + value : value),
-            data = {exists: true, value: value, label: label};
-        data[attr] = value;
-        return data;
-      });
+    lengendRange.push(inc);
+    var legend = generateLegend(lengendRange, function(value, isLast) {
+      var label = labelText + (isLast ? '>' + value : value),
+          data = {exists: true, value: value, label: label};
+      data[attr] = value;
+      return data;
+    });
 
-      if (inc < 0) {
-        legend.reverse();
-      }
+    if (inc < 0) {
+      legend.reverse();
+    }
 
-      var fn = function(d, i) { 
-        var value = d[attr];
+    summary
+      .legend(legend)
+      .fill(function(d, _) { 
         if (!d.exists) {
           return missingGrey;
         }
-        if (value > max) {
-          return scale(max);
-        }
-        return scale(value);
-      };
-
-      summary
-        .legend(legend)
-        .fill(fn);
+        return scale(Math.min(d[attr], max));
+      });
   }
 
   function updateSummary() {
@@ -119,7 +113,7 @@ $(document).ready(function() {
 
     if (name === 'exemplar') {
       summary.legend(null);
-      summary.fill(function(d, i) { return d.image; });
+      summary.fill(function(d, _) { return d.image; });
 
     } else if (name === 'count') {
       var countMax = d3.min([summaryAttributeRanges.count[1], 400]);
@@ -151,8 +145,7 @@ $(document).ready(function() {
   }
 
   function setUpSummary(family) {
-    var fillFn = Object,
-        known = heatMap.known(),
+    var known = heatMap.known(),
         nts = ["A", "C", "G", "U"],
         data = [],
         defs = [],
@@ -167,10 +160,7 @@ $(document).ready(function() {
       });
     };
 
-    summaryAttributeRanges = {
-      count: [],
-      distance: []
-    };
+    summaryAttributeRanges = { count: [], distance: [] };
 
     $.each(nts, function(_, first) {
       $.each(nts, function(_, second) {
@@ -264,7 +254,7 @@ $(document).ready(function() {
     mapClick(heatMap.getPairsInRange(d, i));
   });
 
-  summary.click(function(d, i) {
+  summary.click(function(d, _) {
     var known = heatMap.known();
     mapClick(known[d.sequence]);
   });
