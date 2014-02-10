@@ -8,6 +8,10 @@ import json
 
 import itertools as it
 
+import requests
+
+URL = 'http://rna.bgsu.edu/rna3dhub/rest/getCoordinates'
+
 
 def generate_data(header, rows):
     data = {'items': {}, 'pairs': []}
@@ -17,6 +21,8 @@ def generate_data(header, rows):
     for row in it.imap(lambda r: dict(it.izip(header, r)), rows):
         first = row['Base combination']
         family = row['Family']
+        known = True
+        units = [row['NT1ID'], row['NT2ID']]
 
         pdb = row['PDBID']
         if row['Resolution'] == 'NaN':
@@ -27,18 +33,28 @@ def generate_data(header, rows):
         if 'MODEL' in pdb:
             pdb = 'Modeled'
             resolution = None
+            known = False
         elif 'CURATED' in pdb:
             pdb = pdb.split('_')[1]
 
+        # We have to detect if we can get the coordinates for the given item.
+        # The only way to do this in cases where we have a unit ids is to make
+        # a request for that set of coordiantes and see if it worked.
+        if known:
+            response = requests.post(URL, data={'coord': ','.join(units)})
+            if 'MODEL' not in response.text:
+                known = False
+
         data['items'][first] = {
-            'units': [row['NT1ID'], row['NT2ID']],
+            'units': units,
             'pdb': pdb,
             'resolution': resolution,
             'group': row['LW 2002 subgroup'],
             'family': family,
             'distance': float(row['C1*-C1* distance']),
             'count': int(row['Count']),
-            'sequence': first
+            'sequence': first,
+            'coordinates_exist': known
         }
         for key in names:
             if re.match('^[ACGUacgu]{2}$', key):
