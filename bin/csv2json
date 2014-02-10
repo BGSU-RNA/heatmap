@@ -37,7 +37,8 @@ def generate_data(header, rows):
             'group': row['LW 2002 subgroup'],
             'family': family,
             'distance': float(row['C1*-C1* distance']),
-            'count': int(row['Count'])
+            'count': int(row['Count']),
+            'sequence': first
         }
         for key in names:
             if re.match('^[ACGUacgu]{2}$', key):
