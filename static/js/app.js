@@ -9,6 +9,7 @@ $(document).ready(function() {
       missingGrey = 'grey',
       exemplarUrlTemplate = Handlebars.compile('static/img/{{family}}/{{family}} _{{sequence}}_exemplar.png'),
       heatMapTemplate = null,
+      summaryTemplate = null,
       heatMap = new HeatMap({ size: 300, selection: '#heat-map' }),
       summary = new HeatMap({
         size: 300,
@@ -19,6 +20,11 @@ $(document).ready(function() {
 
   $.get('static/templates/heat-map-template.hbs', function(string) {
     heatMapTemplate = Handlebars.compile(string);
+  });
+
+  // This should be done before hovering. I hope.
+  $.get('static/templates/exemplar-hover.hbs', function(string) {
+    summaryTemplate = Handlebars.compile(string);
   });
 
   heatMap.fill(function(d) {
@@ -46,6 +52,9 @@ $(document).ready(function() {
 
     // Exclude things where we do not have 3D coordinates
     var known = data.filter(function(d) { return d.coordinates_exist; });
+
+    // Do nothing if we have selected something that has no 3D
+    if (known.length === 0) { return; }
 
     heatMap.show(known.map(function(e) { return e.sequence; }));
     summary.show(known.map(function(e) { return e.id.toUpperCase(); }));
@@ -144,13 +153,7 @@ $(document).ready(function() {
   }
 
   function updateSummary() {
-    var name = $("#coloring-selector").val(),
-        template = null;
-
-    // This should be done before hovering. I hope.
-    $.get('static/templates/exemplar-hover.hbs', function(string) {
-      template = Handlebars.compile(string);
-    });
+    var name = $("#coloring-selector").val();
 
     if (name === 'exemplar') {
       summary.legend(null);
@@ -182,7 +185,7 @@ $(document).ready(function() {
         var data = this.__data__,
             resolution = data.resolution || 'NA',
             context = $.extend({}, data, {resolution: resolution});
-        return template(context);
+        return summaryTemplate(context);
       }
     });
   }
