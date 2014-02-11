@@ -7,9 +7,7 @@ $(document).ready(function() {
       missingGrey = 'grey',
       exemplarUrlTemplate = Handlebars.compile('static/img/{{family}}/{{family}} _{{sequence}}_exemplar.png'),
       heatMap = HeatMap({ size: 300, selection: '#heat-map' }),
-      summary = HeatMap({ size: 300, selection: '#summary-table', rotateColumns: false, onlyDiagonal: false });
-
-  summary.markOpacity(0.4);
+      summary = HeatMap({ size: 300, selection: '#summary-table', rotateColumns: false, showOnlyDiagonal: false });
 
   heatMap.fill(function(d) {
     var getFirst = heatMap.getFirstItem(),
@@ -22,6 +20,8 @@ $(document).ready(function() {
     }
     return missingGrey;
   });
+
+  summary.markOpacity(0.5);
 
   function generateLegend(range, func) {
     var last = range[1] - range[2];
@@ -36,14 +36,7 @@ $(document).ready(function() {
     var known = data.filter(function(d) { return d.coordinates_exist; });
 
     heatMap.show(known.map(function(e) { return e.sequence; }));
-    // summary.show(known);
-
-    jsMolTools.showOnly(known.map(function(entry) {
-      return {
-        id: entry.family + '-' + entry.sequence,
-        unit_ids: entry.units.join(','),
-      };
-    }));
+    summary.show(known.map(function(e) { return e.id.toUpperCase(); }));
   }
 
   function jmolWatch() {
@@ -78,16 +71,6 @@ $(document).ready(function() {
 
     showSelected(currentData);
   }
-
-  // function toggleRows(rows) {
-  //   $('.jmol-toggle').removeClass('success');
-  //   $('.jmol-toggle').jmolHide();
-  //   $.each(rows, function(_, sequence) {
-  //     var id = 'row-' + sequence;
-  //     $("#" + id).addClass('success');
-  //     $.jmolTools.models[id].show();
-  //   });
-  // }
 
   function updateTable(name, raw) {
     var nts = $.map(raw.items, function(data, sequence) {
@@ -202,6 +185,7 @@ $(document).ready(function() {
       nts.forEach(function(second) {
         var sequence = first + second,
             entry = {
+              id: family.toUpperCase() + '-' + sequence.toUpperCase(),
               sequence: sequence,
               items: [first, second],
               count: 0,
@@ -261,7 +245,6 @@ $(document).ready(function() {
     summaryAttributeRanges.resolution = [0, d3.max(summaryAttributeRanges.resolution)];
   }
 
-
   function setUpSummary(family, items) {
     var known = heatMap.known(),
         data = aggregateItems(family, known, items),
@@ -272,7 +255,6 @@ $(document).ready(function() {
     summary.pairs(data);
     updateSummary();
   }
-
 
   function loadFamily() {
     var name = $("#family-selector").val(),
