@@ -48,6 +48,7 @@
           getFirstItem: function(d) { return d.items[0]; },
           getSecondItem: function(d) { return d.items[1]; },
           getItems: function(d) { return d.items; },
+          getID: function(d) { return d.id; },
           fill: this.colorScale(),
           click: Object,
           addDefinitions: Object,
@@ -333,17 +334,19 @@
 
   HeatMapPlot.prototype.show = function(sequences) {
     var map = {},
-        getFirst = this.getFirstItem(),
+        getID = this.getID(),
+        getItems = this.getItems(),
         onlyDiagonal = this.showOnlyDiagonal();
 
     $.each(sequences, function(_, s) { map[s] = true; });
 
-    var selection = this.selection();
-    var pairs = $.map(this.ordered(), function(data, _) {
-      if (map[getFirst(data)]){
-        if (!onlyDiagonal || (onlyDiagonal && data.__row === data.__column)) {
-          return data;
-        }
+    var pairs = $.map(this.ordered(), function(data) {
+      var id = getID(data),
+          items = getItems(data);
+
+      if ((!onlyDiagonal && map[id]) ||
+          (onlyDiagonal && data.__row === data.__column && map[items[0]])) {
+        return data;
       }
       return null;
     });
