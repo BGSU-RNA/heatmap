@@ -1,13 +1,25 @@
-/*global document, HeatMap, d3, $, Handlebars, jsMolTools */
 $(document).ready(function() {
+  'use strict';
+  /* jshint jquery: true */
+  /* global document, HeatMap, d3, Handlebars, jsMolTools */
 
   var itemData = {},
       currentData = [],
       summaryAttributeRanges = {},
       missingGrey = 'grey',
       exemplarUrlTemplate = Handlebars.compile('static/img/{{family}}/{{family}} _{{sequence}}_exemplar.png'),
+      heatMapTemplate = null,
       heatMap = HeatMap({ size: 300, selection: '#heat-map' }),
-      summary = HeatMap({ size: 300, selection: '#summary-table', rotateColumns: false, showOnlyDiagonal: false });
+      summary = HeatMap({
+        size: 300,
+        selection: '#summary-table',
+        rotateColumns: false,
+        showOnlyDiagonal: false
+      });
+
+  $.get('static/templates/heat-map-template.hbs', function(string) {
+    heatMapTemplate = Handlebars.compile(string);
+  });
 
   heatMap.fill(function(d) {
     var getFirst = heatMap.getFirstItem(),
@@ -25,7 +37,7 @@ $(document).ready(function() {
 
   function generateLegend(range, func) {
     var last = range[1] - range[2];
-    return $.map(d3.range.apply(null, range), function(value, _) {
+    return d3.range.apply(null, range).map(function(value) {
       return func(value, (last - value < 0.0001));
     });
   }
@@ -123,7 +135,7 @@ $(document).ready(function() {
 
     summary
       .legend(legend)
-      .fill(function(d, _) {
+      .fill(function(d) {
         if (!d.exists || d[attr] === null) {
           return missingGrey;
         }
@@ -142,7 +154,7 @@ $(document).ready(function() {
 
     if (name === 'exemplar') {
       summary.legend(null);
-      summary.fill(function(d, _) {
+      summary.fill(function(d) {
         return (d.exists ? 'url(#' + d.name + ')' : missingGrey);
       });
 
@@ -180,7 +192,7 @@ $(document).ready(function() {
     var nts = ['A', 'C', 'G', 'U'],
         data = [],
         knownValues = function(sequence, name) {
-          return $.map(known[sequence], function(combination, _) {
+          return $.map(known[sequence], function(combination) {
             return items[combination][name];
           });
         };
@@ -219,7 +231,7 @@ $(document).ready(function() {
   }
 
   function generateDefs(data) {
-    var defs = $.map(data, function(entry, _) {
+    var defs = $.map(data, function(entry) {
       return (entry.exists ?  {name: entry.name, url: entry.url} : null);
     });
 
@@ -277,8 +289,10 @@ $(document).ready(function() {
         gravity: 's',
         html: true,
         title: function() {
-          var data = this.__data__;
-          return '<span>' + data.items.join(' ') + ': ' + data.idi.toFixed(2) + '</span>';
+          var data = $.extend({}, this.__data__);
+          data.sequence = data.items.join(' ');
+          data.idi = data.idi.toFixed(2);
+          return heatMapTemplate(data);
         }
       });
 
@@ -290,7 +304,7 @@ $(document).ready(function() {
     mapClick(heatMap.getPairsInRange(d, i));
   });
 
-  summary.click(function(d, _) {
+  summary.click(function(d) {
     var known = heatMap.known();
     mapClick(known[d.sequence]);
   });
