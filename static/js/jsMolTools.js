@@ -70,8 +70,7 @@
     return true;
   };
 
-  Model.prototype.loadingFailed = function(data) {
-    console.error('Server returned: ' + data);
+  Model.prototype.loadingFailed = function() {
     jmolScript('set echo top right; color echo red; echo Failed to load a model...;');
   };
 
@@ -95,7 +94,7 @@
     var model = this.modelNumber,
         i = 0;
 
-    if (this.superimposed || model === 0) { return; }
+    if (this.superimposed || model === 1) { return; }
 
     for (i = 0; i < 3; i++) {
       // if the same number of phosphates, try to superimpose,
