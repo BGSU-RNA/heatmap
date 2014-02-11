@@ -200,6 +200,17 @@
     return this.env;
   };
 
+  function ShowLoadingMessage() {
+    jmolScript('set echo top left; color echo green; echo Loading...;');
+  }
+
+  function ShowDoneMessage() {
+    jmolScript('set echo top left; color echo green; echo Done;');
+    setTimeout(function () {
+      jmolScript('set echo top left; echo ;');
+    }, 1200);
+  }
+
   window.jsMolTools = {};
 
   window.jsMolTools.showOnly = function(data) {
@@ -212,14 +223,8 @@
       visible[id] = model;
     });
 
-    jmolScript('set echo top left; color echo green; echo Loading...;');
-
-    $(document).ajaxStop(function() {
-      jmolScript('set echo top left; color echo green; echo Done;');
-      setTimeout(function () { 
-        jmolScript('set echo top left; echo ;');
-      }, 1200);
-    });
+    $(document).ajaxStart(ShowLoadingMessage);
+    $(document).ajaxStop(ShowDoneMessage);
 
     // TODO: Merge all requests and only display once to make things efficent
     $.each(modelCache, function(id, model) {
