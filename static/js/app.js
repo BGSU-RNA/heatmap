@@ -1,12 +1,27 @@
-/*global document, HeatMap, d3, $, Handlebars */
+/*global document, HeatMap, d3, $, Handlebars, jsMolTools */
 $(document).ready(function() {
 
   var itemData = {},
-      totalRows = [],
+      currentData = [],
       summaryAttributeRanges = {},
       missingGrey = 'grey',
+      exemplarUrlTemplate = Handlebars.compile('static/img/{{family}}/{{family}} _{{sequence}}_exemplar.png'),
       heatMap = HeatMap({ size: 300, selection: '#heat-map' }),
-      summary = HeatMap({ size: 300, selection: '#summary-table', rotateColumns: false });
+      summary = HeatMap({ size: 300, selection: '#summary-table', rotateColumns: false, onlyDiagonal: false });
+
+  summary.markOpacity(0.4);
+
+  heatMap.fill(function(d) {
+    var getFirst = heatMap.getFirstItem(),
+        scale = heatMap.colorScale();
+    if (d.__row !== d.__column) {
+      return scale(d);
+    }
+    if (d.label || itemData[getFirst(d)].coordinates_exist) {
+      return scale(d);
+    }
+    return missingGrey;
+  });
 
   function generateLegend(range, func) {
     var last = range[1] - range[2];
@@ -15,42 +30,64 @@ $(document).ready(function() {
     });
   }
 
-  function jmolWatch() {
-    $('.jmol-toggle').jmolTools({
-      showStereoId: 'jt-stereo',
-      showNumbersId: 'jt-numbers',
-      showNextId: 'jt-next',
-      showPrevId: 'jt-prev',
-      showAllId: 'jt-all'
-    });
+  function showSelected(data) {
 
+    // Exclude things where we do not have 3D coordinates
+    var known = data.filter(function(d) { return d.coordinates_exist; });
+
+    heatMap.show(known.map(function(e) { return e.sequence; }));
+    // summary.show(known);
+
+    jsMolTools.showOnly(known.map(function(entry) {
+      return {
+        id: entry.family + '-' + entry.sequence,
+        unit_ids: entry.units.join(','),
+      };
+    }));
+  }
+
+  function jmolWatch() {
     $('.jmol-toggle').on('click', function(event) {
-      var $this = $(this);
+      var $this = $(this),
+          data = itemData[$this.data('sequence')];
+
       if ($this.hasClass('success')) {
         $this.removeClass('success');
       } else {
         if (event.ctrlKey || event.metaKey) {
-          totalRows.push($this.data('sequence'));
-          $(this).addClass('success');
+          currentData.push(data);
+          $this.addClass('success');
         } else {
-          totalRows = [$this.data('sequence')];
+          currentData = [data];
           $('.jmol-toggle').removeClass('success');
-          $(this).addClass('success');
+          $this.addClass('success');
         }
-        heatMap.show(totalRows);
       }
+
+      showSelected(currentData);
     });
   }
 
-  function toggleRows(rows) {
-    $('.jmol-toggle').removeClass('success');
-    $('.jmol-toggle').jmolHide();
-    $.each(rows, function(_, sequence) {
-      var id = 'row-' + sequence;
-      $("#" + id).addClass('success');
-      $.jmolTools.models[id].show();
-    });
+  function mapClick(pairs) {
+    var data = pairs.map(function(entry) { return itemData[entry]; });
+    if (d3.event.ctrlKey || d3.event.metaKey) {
+      currentData = currentData.concat(data);
+    } else {
+      currentData = data;
+    }
+
+    showSelected(currentData);
   }
+
+  // function toggleRows(rows) {
+  //   $('.jmol-toggle').removeClass('success');
+  //   $('.jmol-toggle').jmolHide();
+  //   $.each(rows, function(_, sequence) {
+  //     var id = 'row-' + sequence;
+  //     $("#" + id).addClass('success');
+  //     $.jmolTools.models[id].show();
+  //   });
+  // }
 
   function updateTable(name, raw) {
     var nts = $.map(raw.items, function(data, sequence) {
@@ -61,7 +98,8 @@ $(document).ready(function() {
             resolution: data.resolution,
             nt1: data.units[0],
             nt2: data.units[1],
-            count: data.count
+            count: data.count,
+            'class': (data.coordinates_exist ? '' : 'warning')
           };
         }),
         order = {};
@@ -150,7 +188,7 @@ $(document).ready(function() {
     });
   }
 
-  function summarizeItems(family, known, items) {
+  function aggregateItems(family, known, items) {
 
     var nts = ['A', 'C', 'G', 'U'],
         data = [],
@@ -160,8 +198,8 @@ $(document).ready(function() {
           });
         };
 
-    $.each(nts, function(_, first) {
-      $.each(nts, function(_, second) {
+    nts.forEach(function(first) {
+      nts.forEach(function(second) {
         var sequence = first + second,
             entry = {
               sequence: sequence,
@@ -173,12 +211,9 @@ $(document).ready(function() {
               image: missingGrey
             };
 
-
         if (entry.exists) {
-          var url = 'static/img/' + family + '/' + family + ' _' + sequence + '_exemplar.png',
-              fillName = family + '-' + sequence + '-basepair';
-          entry.url = url;
-          entry.name = fillName;
+          entry.url = exemplarUrlTemplate({family: family, sequence: sequence});
+          entry.name = family + '-' + sequence + '-basepair';
           entry.count = d3.sum(knownValues(sequence, 'count'));
           entry.distance = d3.median(knownValues(sequence, 'distance'));
 
@@ -216,11 +251,23 @@ $(document).ready(function() {
     };
   }
 
+  function summarizeItems(items) {
+    summaryAttributeRanges = {count: [], resolution: []};
+    $.each(items, function(_, item) {
+      summaryAttributeRanges.count.push(item.count);
+      summaryAttributeRanges.resolution.push(item.resolution);
+    });
+    summaryAttributeRanges.count = [0, d3.max(summaryAttributeRanges.count)];
+    summaryAttributeRanges.resolution = [0, d3.max(summaryAttributeRanges.resolution)];
+  }
+
+
   function setUpSummary(family, items) {
     var known = heatMap.known(),
-        data = summarizeItems(family, known, items),
+        data = aggregateItems(family, known, items),
         defFn = generateDefs(data);
 
+    summarizeItems(items);
     summary.addDefinitions(defFn);
     summary.pairs(data);
     updateSummary();
@@ -234,6 +281,7 @@ $(document).ready(function() {
       if (typeof data === "string") {
         data = $.parseJSON(data);
       }
+      itemData = data.items;
       updateTable(name, data);
       heatMap
         .pairs(data.pairs)
@@ -252,16 +300,6 @@ $(document).ready(function() {
     });
   }
 
-  function mapClick(rows) {
-    if (d3.event.ctrlKey || d3.event.metaKey) {
-      totalRows = totalRows.concat(rows);
-    } else {
-      totalRows = rows;
-    }
-    toggleRows(totalRows);
-    heatMap.show(totalRows);
-  }
-
   heatMap.click(function(d, i) {
     mapClick(heatMap.getPairsInRange(d, i));
   });
@@ -273,12 +311,14 @@ $(document).ready(function() {
 
   heatMap.legend(generateLegend([0, 6, 0.1], function(idi, isLast) {
     var label = 'IDI: ' + (isLast ? '>' + idi : idi);
-    return {'value': idi, 'idi': idi, 'label': label};
+    return {value: idi, idi: idi, label: label};
   }));
 
   $('.chosen-select').chosen();
   $('#family-selector').change(loadFamily);
   $('#coloring-selector').change(updateSummary);
+  // $('#jt-numbers').jsMolTools.numberToggle();
+  // $('#jt-clear').jsMolTools.clearToggle();
   loadFamily();
 
 });

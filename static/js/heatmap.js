@@ -1,6 +1,25 @@
 (function () {
   'use strict';
-  /*globals window, d3, document, $, jmolApplet, jmolScript */
+  /*globals window, d3 */
+
+  function extend(out) {
+    var i, key;
+    out = out || {};
+
+    for (i = 1; i < arguments.length; i++) {
+      if (!arguments[i]) {
+        continue;
+      }
+
+      for (key in arguments[i]) {
+        if (arguments[i].hasOwnProperty(key)) {
+          out[key] = arguments[i][key];
+        }
+      }
+    }
+
+    return out;
+  }
 
   function accessor(initial, callback) {
     return (function() {
@@ -34,27 +53,38 @@
           addDefinitions: Object,
           legend: null,
           legendSize: 10,
-          rotateColumns: true
+          rotateColumns: true,
+          showOnlyDiagonal: true,
+          markFill: 'black',
+          markOpacity: 1,
+          opacity: '1'
         };
 
     self.pairs = accessor([], function(_, pairs) {
-      var known = {},
-          getItems = self.getItems();
-      $.each(pairs, function(_, p) {
-        $.each(getItems(p), function(_, item) {
-          var key = item.toUpperCase();
-          known[key] = known[key] || [];
-          if (known[key].indexOf(item) === -1) {
-            known[key].push(item);
-          }
-        });
-      });
+      var known = self.computeKnown(pairs);
       self.known(known);
     });
 
-    var conf = $.extend({}, defaults, config);
+    var conf = extend({}, defaults, config);
     $.each(defaults, function(k, _) { self[k] = accessor(conf[k]); });
   }
+
+  HeatMapPlot.prototype.computeKnown = function(pairs) {
+    var known = {},
+        getItems = this.getItems();
+    pairs.forEach(function(pair) {
+      var items = getItems(pair);
+      items.forEach(function(item) {
+        var key = item.toUpperCase();
+        known[key] = known[key] || [];
+        if (known[key].indexOf(item) === -1) {
+          known[key].push(item);
+        }
+      });
+    });
+
+    return known;
+  };
 
   HeatMapPlot.prototype.cellSize = function(count) {
     if (arguments.length === 0) {
@@ -139,7 +169,7 @@
         __row: rowIndex,
         __column: colIndex
       };
-      ordered.push($.extend(computed, data));
+      ordered.push(extend(computed, data));
       // colIndex += 1;
       rowIndex += 1;
     });
@@ -168,6 +198,7 @@
         .attr("fill", this.fill())
         .attr('stroke', 'white')
         .attr('stroke-width', 1)
+        .attr('opacity', this.opacity())
         .on('click', self.click());
   };
 
@@ -296,17 +327,23 @@
           return d.__column * cellSize + cellSize / 2;
         })
         .attr('r', radius)
-        .attr('fill', 'black');
+        .attr('fill', this.markFill())
+        .attr('opacity', this.markOpacity());
   };
 
   HeatMapPlot.prototype.show = function(sequences) {
     var map = {},
-        getFirst = this.getFirstItem();
+        getFirst = this.getFirstItem(),
+        onlyDiagonal = this.showOnlyDiagonal();
+
     $.each(sequences, function(_, s) { map[s] = true; });
 
+    var selection = this.selection();
     var pairs = $.map(this.ordered(), function(data, _) {
-      if (data.__row === data.__column && map[getFirst(data)]) {
-        return data;
+      if (map[getFirst(data)]){
+        if (!onlyDiagonal || (onlyDiagonal && data.__row === data.__column)) {
+          return data;
+        }
       }
       return null;
     });
