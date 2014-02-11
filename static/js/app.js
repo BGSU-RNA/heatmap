@@ -37,6 +37,15 @@ $(document).ready(function() {
 
     heatMap.show(known.map(function(e) { return e.sequence; }));
     summary.show(known.map(function(e) { return e.id.toUpperCase(); }));
+
+    jsMolTools.showOnly(known.map(function(e) {
+      return { id: e.id, unit_ids: e.units.join(',') };
+    }));
+
+    $('.jmol-tools').removeClass('success');
+    data.forEach(function(datum) {
+      $('#row-' + datum.sequence).addClass('success');
+    });
   }
 
   function jmolWatch() {
@@ -44,17 +53,10 @@ $(document).ready(function() {
       var $this = $(this),
           data = itemData[$this.data('sequence')];
 
-      if ($this.hasClass('success')) {
-        $this.removeClass('success');
+      if (event.ctrlKey || event.metaKey) {
+        currentData.push(data);
       } else {
-        if (event.ctrlKey || event.metaKey) {
-          currentData.push(data);
-          $this.addClass('success');
-        } else {
-          currentData = [data];
-          $('.jmol-toggle').removeClass('success');
-          $this.addClass('success');
-        }
+        currentData = [data];
       }
 
       showSelected(currentData);
@@ -302,7 +304,13 @@ $(document).ready(function() {
   $('#family-selector').change(loadFamily);
   $('#coloring-selector').change(updateSummary);
   // $('#jt-numbers').jsMolTools.numberToggle();
-  // $('#jt-clear').jsMolTools.clearToggle();
+
+  $('#jt-clear').on('click', function() {
+    currentData = [];
+    showSelected(currentData);
+    $('.jmol-toggle').removeClass('success');
+  });
+
   loadFamily();
 
 });
