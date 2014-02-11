@@ -24,27 +24,27 @@
       <div class='col-md-5'>
         <form role='form' id='select-family' class='form-horizontal' action=''>
 
-            <div class="form-group">
-              <label for='family-selector' class='col-md-4 control-label'>
-                Select a Family
-              </label>
-              <div class='col-md-6'>
-                <select id='family-selector' class='chosen-select'>
-                  <option value='cWW' selected>cis Watson/Watson</option>
-                  <option value='tWW'>trans Watson/Watson</option>
-                  <option value='cWS'>cis Watson/Sugar</option>
-                  <option value='tWS'>trans Watson/Sugar</option>
-                  <option value='cWH'>cis Watson/Hoogsteen</option>
-                  <option value='tWH'>trans Watson/Hoogsteen</option>
-                  <option value='cSS'>cis Sugar/Sugar</option>
-                  <option value='tSS'>trans Sugar/Sugar</option>
-                  <option value='cHS'>cis Hoogsteen/Sugar</option>
-                  <option value='tHS'>trans Hoogsteen/Sugar</option>
-                  <option value='cHH'>cis Hoogsteen/Hoogsteen</option>
-                  <option value='tHH'>trans Hoogsteen/Hoogsteen</option>
-                </select>
-              </div>
-              </div>
+          <div class="form-group">
+            <label for='family-selector' class='col-md-4 control-label'>
+              Select a Family
+            </label>
+            <div class='col-md-6'>
+              <select id='family-selector' class='chosen-select'>
+                <option value='cWW' selected>cis Watson/Watson</option>
+                <option value='tWW'>trans Watson/Watson</option>
+                <option value='cWS'>cis Watson/Sugar</option>
+                <option value='tWS'>trans Watson/Sugar</option>
+                <option value='cWH'>cis Watson/Hoogsteen</option>
+                <option value='tWH'>trans Watson/Hoogsteen</option>
+                <option value='cSS'>cis Sugar/Sugar</option>
+                <option value='tSS'>trans Sugar/Sugar</option>
+                <option value='cHS'>cis Hoogsteen/Sugar</option>
+                <option value='tHS'>trans Hoogsteen/Sugar</option>
+                <option value='cHH'>cis Hoogsteen/Hoogsteen</option>
+                <option value='tHH'>trans Hoogsteen/Hoogsteen</option>
+              </select>
+            </div>
+          </div>
 
               <div class="form-group">
                 <label for='coloring-selector' class='col-md-4 control-label'>
@@ -58,6 +58,12 @@
                     <!-- <option value="distance">C1'-C1' Distance</option> -->
                   </select>
                 </div>
+              </div>
+
+              <div class='form-group'>
+                <button id='jt-clear' type='button' class='btn btn-default'>Clear Selected</button>
+                <button type='button' class='btn btn-default'>Show All</button>
+                <button type='button' class='btn btn-default'>Show Numbers</button>
               </div>
           </form>
         </div>
@@ -119,7 +125,7 @@
       <div id='table-container' class='col-md-9'></div>
 
       <div id='download-container' class='col-md-3'>
-        <form role='form'>
+        <form role='form' action=''>
           <legend>Download Links</legend>
           <div class="form-group">
             <button type='button' class="disabled btn btn-success">Download Selected</button>
