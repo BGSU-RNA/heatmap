@@ -6,7 +6,7 @@
     var i, key;
     out = out || {};
 
-    for (i = 1; i < arguments.length; i++) {
+    for (i = 1; i < arguments.length; i+=1) {
       if (!arguments[i]) {
         continue;
       }
@@ -38,36 +38,35 @@
   }
 
   function HeatMapPlot(config) {
-    var self = this,
-        defaults = {
-          margin: 30,
-          size:  550,
-          selection: null,
-          ordered: [],
-          known: {},
-          getFirstItem: function(d) { return d.items[0]; },
-          getSecondItem: function(d) { return d.items[1]; },
-          getItems: function(d) { return d.items; },
-          getID: function(d) { return d.id; },
-          fill: this.colorScale(),
-          click: Object,
-          addDefinitions: Object,
-          legend: null,
-          legendSize: 10,
-          rotateColumns: true,
-          showOnlyDiagonal: true,
-          markFill: 'black',
-          markOpacity: 1,
-          opacity: '1'
-        };
+    var self = this;
+    var defaults = {
+      margin: 30,
+      size:  550,
+      selection: null,
+      ordered: [],
+      known: {},
+      getFirstItem: function(d) { return d.items[0]; },
+      getSecondItem: function(d) { return d.items[1]; },
+      getItems: function(d) { return d.items; },
+      getID: function(d) { return d.id; },
+      fill: this.colorScale(),
+      click: Object,
+      addDefinitions: Object,
+      legend: null,
+      legendSize: 10,
+      rotateColumns: true,
+      showOnlyDiagonal: true,
+      markFill: 'black',
+      markOpacity: 1,
+      opacity: '1'
+    };
 
-    self.pairs = accessor([], function(_, pairs) {
-      var known = self.computeKnown(pairs);
-      self.known(known);
+    this.pairs = accessor([], function(_, pairs) {
+      self.known(self.computeKnown(pairs));
     });
 
     var conf = extend({}, defaults, config);
-    $.each(defaults, function(k, _) { self[k] = accessor(conf[k]); });
+    Object.keys(defaults).forEach(function(k) { self[k] = accessor(conf[k]); });
   }
 
   HeatMapPlot.prototype.computeKnown = function(pairs) {
@@ -99,7 +98,7 @@
         names = [],
         getFirst = this.getFirstItem();
 
-    $.each(this.pairs(), function(_, d) {
+    this.pairs().forEach(function(d) {
       var first = getFirst(d);
       if (!seen.hasOwnProperty(first)) {
         names.push(first);
@@ -114,14 +113,14 @@
         labels = this.labels();
 
     // Row Labels
-    var rowLabels = this.vis
+    this.vis
       .append('g')
       .selectAll('.row-labels')
       .data(labels)
       .enter().append('text')
-        .attr('id', function(d, i) { return 'row-label-' + i; })
-        .attr('class', function(d, i) { return 'row-labels'; })
-        .text(function(d, i) { return d; })
+        .attr('id', function(_, i) { return 'row-label-' + i; })
+        .attr('class', function() { return 'row-labels'; })
+        .text(String)
         .attr('x', 0)
         .attr('y', function(d, i) { return i * cellSize; })
         .style("text-anchor", "end")
@@ -134,15 +133,15 @@
       var x = i * cellSize + (cellSize/2);
       return "rotate(-90 " + x + ",-2)";
     };
-  } 
+  }
 
-  var colLabels = this.vis
+  this.vis
     .append("g")
       .selectAll(".col-labels")
       .data(labels)
       .enter().append("text")
-        .attr('id', function(d, i) { return 'col-label-' + i; })
-        .attr('class', function(d, i) { return 'col-labels'; })
+        .attr('id', function(_, i) { return 'col-label-' + i; })
+        .attr('class', function() { return 'col-labels'; })
         .text(String)
         .attr("x", function (d, i) { return i * cellSize + (cellSize/2); })
         .attr("y", -2)
@@ -157,13 +156,11 @@
         colIndex = 0,
         getFirst = this.getFirstItem();
 
-    $.each(this.pairs(), function(globalIndex, data) {
-      if (ordered.length > 0 && 
+    this.pairs().forEach(function(data, globalIndex) {
+      if (ordered.length > 0 &&
           getFirst(data) !== getFirst(ordered[ordered.length - 1])) {
         rowIndex = 0;
         colIndex += 1;
-        // rowIndex += 1;
-        // colIndex = 0;
       }
       var computed = {
         __current: globalIndex,
@@ -171,7 +168,6 @@
         __column: colIndex
       };
       ordered.push(extend(computed, data));
-      // colIndex += 1;
       rowIndex += 1;
     });
     this.ordered(ordered);
@@ -184,16 +180,16 @@
       .selectAll(".cell")
       .data(ordered)
       .enter().append("rect")
-        .attr('id', function(d, i) { return 'cell-' + i; })
-        .attr("class", function(d, i) { 
+        .attr('id', function(_, i) { return 'cell-' + i; })
+        .attr("class", function(d) {
           var klasses = ["cell"];
           if (d.__row === d.__column) {
             klasses.push("diagonal");
           }
-          return klasses.join(' '); 
+          return klasses.join(' ');
         })
-        .attr("x", function(d, i) { return d.__row * cellSize; })
-        .attr("y", function(d, i) { return d.__column * cellSize; })
+        .attr("x", function(d) { return d.__row * cellSize; })
+        .attr("y", function(d) { return d.__column * cellSize; })
         .attr("width", cellSize)
         .attr("height", cellSize)
         .attr("fill", this.fill())
@@ -216,9 +212,9 @@
       .attr('id', 'legend-cells')
       .data(this.legend())
       .enter().append('rect')
-        .attr('id', function(d, i) { return 'legend-' + i; })
+        .attr('id', function(_, i) { return 'legend-' + i; })
         .attr('class', 'legend-cell')
-        .attr('x', function(d, i) { return width * i; })
+        .attr('x', function(_, i) { return width * i; })
         .attr('y', y)
         .attr('width', width)
         .attr('height', this.legendSize())
@@ -227,7 +223,7 @@
 
 
     var tickCount = 10,
-        values = this.legend().map(function(d, i) { return d.value; }),
+        values = this.legend().map(function(d) { return d.value; }),
         scale = d3.scale.linear().domain(values),
         labelData = scale.ticks(tickCount);
 
@@ -237,7 +233,7 @@
       .attr('id', 'legend-text')
       .data(labelData)
       .enter().append('text')
-        .attr('x', function(d, i) { return (size / tickCount) * i; })
+        .attr('x', function(_, i) { return (size / tickCount) * i; })
         .attr('y', y - this.legendSize() + 8)
         .attr('text-anchor', 'middle')
         .text(String);
@@ -267,7 +263,7 @@
     defFn.call(this, defs);
 
     this.vis = top.append("g")
-      .attr("transform", 
+      .attr("transform",
           "translate(" + margin + "," + margin + ")");
 
     this.drawLabels();
@@ -283,7 +279,7 @@
     var isoInterp = d3.interpolateRgb("#B10026", "#E31A1C"),
         nearInterp = d3.interpolateRgb("#FC4E2A", "#FD8D3C");
 
-    return function(d, i) { 
+    return function(d) {
       if (d.idi <= 2) {
         return isoInterp(d.idi);
       }
@@ -301,17 +297,18 @@
     var getItems = this.getItems();
     if (d.__row < d.__column) {
       return this.range(getItems(d, i));
-    } 
-    if (d.__row === d.__column) {
-      return [this.getFirstItem()(d)];
     }
+    if (d.__row === d.__column) {
+      return [d];
+    }
+    // TODO: Look up correct pairs
     return getItems(d, i);
   };
 
   HeatMapPlot.prototype.mark = function(pairs) {
     var cellSize = this.cellSize(),
         percent = 0.70,
-        radius = Math.sqrt(percent * cellSize^2 / Math.PI);
+        radius = Math.sqrt(percent * Math.pow(cellSize, 2) / Math.PI);
 
     this.vis.selectAll('#diagonal-marks').remove();
 
@@ -321,10 +318,10 @@
       .selectAll(".diagonal-mark")
       .data(pairs)
       .enter().append('circle')
-        .attr("cx", function(d, i) { 
-          return d.__row * cellSize + cellSize / 2; 
+        .attr("cx", function(d) {
+          return d.__row * cellSize + cellSize / 2;
         })
-        .attr("cy", function(d, i) { 
+        .attr("cy", function(d) {
           return d.__column * cellSize + cellSize / 2;
         })
         .attr('r', radius)
@@ -338,7 +335,7 @@
         getItems = this.getItems(),
         onlyDiagonal = this.showOnlyDiagonal();
 
-    $.each(sequences, function(_, s) { map[s] = true; });
+    sequences.forEach(function(_, s) { map[s] = true; });
 
     var pairs = $.map(this.ordered(), function(data) {
       var id = getID(data),
@@ -356,27 +353,24 @@
   HeatMapPlot.prototype.range = function(pair) {
     var ordered = this.ordered(),
         showable = false,
-        seen = {},
+        range = [],
         getFirst = this.getFirstItem();
 
-    $.each(ordered, function(_, obj) {
+    ordered.forEach(function(obj) {
       var first = getFirst(obj);
       if (first === pair[0]) {
         showable = true;
       }
       if (showable) {
-        seen[first] = true;
+        range.push(obj);
       }
       if (first === pair[1]) {
         showable = false;
       }
     });
-    return $.map(seen, function(_, sequence) { return sequence; });
+
+    return range;
   };
 
-  var HeatMap = window.HeatMap || function(config) {
-    return new HeatMapPlot(config);
-  };
-
-  window.HeatMap = HeatMap;
+  window.HeatMap = window.HeatMap || HeatMapPlot;
 }());

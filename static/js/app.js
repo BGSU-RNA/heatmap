@@ -9,8 +9,8 @@ $(document).ready(function() {
       missingGrey = 'grey',
       exemplarUrlTemplate = Handlebars.compile('static/img/{{family}}/{{family}} _{{sequence}}_exemplar.png'),
       heatMapTemplate = null,
-      heatMap = HeatMap({ size: 300, selection: '#heat-map' }),
-      summary = HeatMap({
+      heatMap = new HeatMap({ size: 300, selection: '#heat-map' }),
+      summary = new HeatMap({
         size: 300,
         selection: '#summary-table',
         rotateColumns: false,
@@ -54,7 +54,7 @@ $(document).ready(function() {
       return { id: e.id, unit_ids: e.units.join(',') };
     }));
 
-    $('.jmol-tools').removeClass('success');
+    $('.jmol-toggle').removeClass('success');
     data.forEach(function(datum) {
       $('#row-' + datum.sequence).addClass('success');
     });
