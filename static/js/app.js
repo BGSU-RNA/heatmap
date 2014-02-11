@@ -157,7 +157,9 @@ $(document).ready(function() {
 
     if (name === 'exemplar') {
       summary.legend(null);
-      summary.fill(function(d, _) { return 'url(#' + d.name + ')'; });
+      summary.fill(function(d, _) {
+        return (d.exists ? 'url(#' + d.name + ')' : missingGrey);
+      });
 
     } else if (name === 'count') {
       var countMax = d3.min([summaryAttributeRanges.count[1], 400]);
