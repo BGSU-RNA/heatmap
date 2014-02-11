@@ -46,6 +46,7 @@ def generate_data(header, rows):
                 known = False
 
         data['items'][first] = {
+            'id': '%s-%s' % (family, first),
             'units': units,
             'pdb': pdb,
             'resolution': resolution,
@@ -59,6 +60,7 @@ def generate_data(header, rows):
         for key in names:
             if re.match('^[ACGUacgu]{2}$', key):
                 data['pairs'].append({
+                    'id': '%s-%s-%s' % (family, first, key),
                     'idi': float(row[key]),
                     'items': [first, key]
                 })
