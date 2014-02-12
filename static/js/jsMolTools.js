@@ -5,6 +5,7 @@
 
   var modelCache = {},
       modelCount = 0,
+      showNumbers = false,
       defaults = {
         models: {
           styleMethod: 'sequence',
@@ -159,6 +160,7 @@
         'center ' + model + '.1;';
     }
     jmolScript(command);
+    updateNumbers();
     this.hidden = false;
   };
 
@@ -210,6 +212,14 @@
     }, 1200);
   }
 
+  function updateNumbers() {
+      var cmd = 'label off;';
+      if (showNumbers) {
+        cmd = "select {*.C1'},{*.CA};label %[sequence]%[resno];color labels black;";
+      }
+      jmolScript(cmd);
+  }
+
   window.jsMolTools = {};
 
   window.jsMolTools.showOnly = function(data) {
@@ -234,14 +244,9 @@
   };
 
   window.jsMolTools.toggleNumbers = (function() {
-    var shown = false;
     return function() {
-      var cmd = 'label off;';
-      if (!shown) {
-        cmd = "select {*.C1'},{*.CA};label %[sequence]%[resno];color labels black;";
-      }
-      shown = !shown;
-      jmolScript(cmd);
+      showNumbers = !showNumbers;
+      updateNumbers();
     };
   }());
 
