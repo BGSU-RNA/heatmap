@@ -301,13 +301,20 @@
     if (d.__row === d.__column) {
       return [d];
     }
-    // TODO: Look up correct pairs
-    return getItems(d, i);
+
+    var items = getItems(d, i),
+        getFirst = this.getFirstItem(),
+        diagonal = this.ordered()
+          .filter(function(d) { return d.__row === d.__column; }),
+        firsts = diagonal.map(function(d) { return getFirst(d); });
+
+    return [diagonal[firsts.indexOf(items[1])],
+            diagonal[firsts.indexOf(items[0])]];
   };
 
   HeatMapPlot.prototype.mark = function(pairs) {
     var cellSize = this.cellSize(),
-        percent = 0.70,
+        percent = 0.60,
         radius = Math.sqrt(percent * Math.pow(cellSize, 2) / Math.PI);
 
     this.vis.selectAll('#diagonal-marks').remove();
@@ -335,7 +342,7 @@
         getItems = this.getItems(),
         onlyDiagonal = this.showOnlyDiagonal();
 
-    sequences.forEach(function(_, s) { map[s] = true; });
+    sequences.forEach(function(s) { map[s] = true; });
 
     var pairs = $.map(this.ordered(), function(data) {
       var id = getID(data),
@@ -347,29 +354,19 @@
       }
       return null;
     });
+
     this.mark(pairs);
   };
 
   HeatMapPlot.prototype.range = function(pair) {
-    var ordered = this.ordered(),
-        showable = false,
-        range = [],
-        getFirst = this.getFirstItem();
+    var getFirst = this.getFirstItem(),
+        diagonal = this.ordered()
+          .filter(function(d) { return d.__row === d.__column; }),
+        firsts = diagonal.map(function(d) { return getFirst(d); }),
+        stop = firsts.indexOf(pair[0]) + 1,
+        start = firsts.indexOf(pair[1]);
 
-    ordered.forEach(function(obj) {
-      var first = getFirst(obj);
-      if (first === pair[0]) {
-        showable = true;
-      }
-      if (showable) {
-        range.push(obj);
-      }
-      if (first === pair[1]) {
-        showable = false;
-      }
-    });
-
-    return range;
+    return diagonal.slice(start, stop);
   };
 
   window.HeatMap = window.HeatMap || HeatMapPlot;

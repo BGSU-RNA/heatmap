@@ -1,7 +1,7 @@
 $(document).ready(function() {
   'use strict';
-  /* jshint jquery: true */
-  /* global document, HeatMap, d3, Handlebars, jsMolTools */
+  /* jshint jquery: true, browser: true */
+  /* global document, HeatMap, d3, Handlebars, jsMolTools, console */
 
   var itemData = {},
       currentData = [],
@@ -304,7 +304,8 @@ $(document).ready(function() {
   }
 
   heatMap.click(function(d, i) {
-    mapClick(heatMap.getPairsInRange(d, i));
+    var pairs = heatMap.getPairsInRange(d, i);
+    mapClick(pairs.map(function(d) { return d.items[0]; }));
   });
 
   summary.click(function(d) {
