@@ -233,4 +233,16 @@
 
   };
 
+  window.jsMolTools.toggleNumbers = (function() {
+    var shown = false;
+    return function() {
+      var cmd = 'label off;';
+      if (!shown) {
+        cmd = "select {*.C1'},{*.CA};label %[sequence]%[resno];color labels black;";
+      }
+      shown = !shown;
+      jmolScript(cmd);
+    };
+  }());
+
 }());

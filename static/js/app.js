@@ -329,6 +329,11 @@ $(document).ready(function() {
     $('.jmol-toggle').removeClass('success');
   });
 
+  $("#jt-numbers").on('click', function() {
+    jsMolTools.toggleNumbers();
+    $(this).button('toggle');
+  });
+
   loadFamily();
 
 });
