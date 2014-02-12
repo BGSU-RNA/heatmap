@@ -49,13 +49,13 @@ $(document).ready(function() {
     });
   }
 
-  function showSelected(data) {
+  function showSelected(data, clear) {
 
     // Exclude things where we do not have 3D coordinates
     var known = data.filter(function(d) { return d.coordinates_exist; });
 
     // Do nothing if we have selected something that has no 3D
-    if (known.length === 0) { return; }
+    if (known.length === 0 && !clear) { return; }
 
     heatMap.show(known.map(function(e) { return e.sequence; }));
     summary.show(known.map(function(e) { return e.id.toUpperCase(); }));
@@ -326,7 +326,7 @@ $(document).ready(function() {
 
   $('#jt-clear').on('click', function() {
     currentData = [];
-    showSelected(currentData);
+    showSelected(currentData, true);
     $('.jmol-toggle').removeClass('success');
   });
 
