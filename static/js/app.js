@@ -285,6 +285,9 @@ $(document).ready(function() {
   function loadFamily() {
     var name = $("#family-selector").val(),
         url = 'static/data/' + name + '.json';
+
+    currentData = [];
+
     $.get(url, function(data) {
       if (typeof data === "string") {
         data = $.parseJSON(data);
@@ -326,7 +329,11 @@ $(document).ready(function() {
   }));
 
   $('.chosen-select').chosen();
-  $('#family-selector').change(loadFamily);
+  $('#family-selector').change(function() {
+    currentData = [];
+    jsMolTools.showOnly([]);
+    loadFamily();
+  });
   $('#coloring-selector').change(updateSummary);
   // $('#jt-numbers').jsMolTools.numberToggle();
 
