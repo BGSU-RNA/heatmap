@@ -37,36 +37,245 @@
     }());
   }
 
+  function idiFill() {
+    var isoInterp = d3.interpolateRgb("#B10026", "#E31A1C"),
+        nearInterp = d3.interpolateRgb("#FC4E2A", "#FD8D3C");
+
+    return function(d) {
+      if (d.idi <= 2) {
+        return isoInterp(d.idi);
+      }
+      if (d.idi <= 3.3) {
+        return nearInterp(d.idi);
+      }
+      if (d.idi <= 5) {
+        return '#4292c6';
+      }
+      return '#084594';
+    };
+  }
+
+  function accessibleComponent(plot, obj, proto) {
+    obj.prototype = proto;
+    obj._plot = plot;
+  }
+
+  function Component(defaults, options) {
+    var config = extend({}, defaults, options);
+
+    Object.keys(defaults).forEach(function(key) {
+      this[key] = accessor(config[key]);
+    });
+
+    this._attrs = [];
+  }
+
+  Component.prototype.attr = function(key, value) {
+    this._attrs.push({key: key, value: value});
+    return this;
+  };
+
+  Component.prototype.draw = function() {
+    var data = this.preprocess(),
+        selection = this.draw(data);
+
+    this._attrs.forEach(function(attr) {
+      selection.attr(attr.key, attr.value);
+    });
+  };
+
+  Component.prototype.cellSize = function() {
+    return this._plot.cellSize();
+  };
+
+  function Label(options) {
+    var defaults = {
+      klass: 'label',
+      rotate: false
+    };
+    Component.call(this, defaults, options);
+  }
+
+  Label.prototype = new Component({}, {});
+
+  Label.prototype.x = function() {
+    return function() { return 0; };
+  };
+
+  Label.prototype.y = function() {
+    return function() { return -2; };
+  };
+
+  Label.prototype.render = function(labels) {
+    return this.vis
+      .append('g')
+      .selectAll('.' + this.klass())
+      .data(labels)
+      .enter().append('text')
+        .attr('class', this.klass())
+        .text(String)
+        .attr('x', this.x())
+        .attr('y', this.y());
+  };
+
+  function HorizontalLabel(options) {
+    var defaults = {
+    };
+    Label.call(this, defaults, options);
+  }
+
+  HorizontalLabel.prototype = Label.prototype;
+
+  HorizontalLabel.prototype.y = function() {
+  };
+
+  function VerticalLabel(options) {
+    var defaults = {
+    };
+    Label.call(this, defaults, options);
+  }
+
+  VerticalLabel.prototype = Label.prototype;
+
+  VerticalLabel.prototype.y = function() {
+  };
+
+  function Mark(options) {
+    var defaults = {
+      klass: 'mark',
+      onlyDiagonal: true,
+      areaPercent: 0.6
+    };
+
+    Component.call(this, defaults, options);
+
+    this
+      .attr('pointer-events', 'none')
+      .attr('opacity', 1)
+      .attr('fill', 'black');
+  }
+
+  Mark.prototype = new Component({}, {});
+
+  Mark.prototype.radius = function() {
+    var cellSize = this.cellSize();
+    return Math.sqrt(this.areaPercent() * Math.pow(cellSize, 2) / Math.PI);
+  };
+
+  Mark.prototype.render = function(marks) {
+
+    var cellSize = this.cellSize();
+    this.vis.selectAll('#diagonal-marks').remove();
+
+    this.vis
+      .append('g')
+      .selectAll(".diagonal-mark")
+      .data(marks)
+      .enter().append('circle')
+        .attr('class', this.klass())
+        .attr("cx", function(d) { return d.__row * cellSize + cellSize / 2; })
+        .attr("cy", function(d) { return d.__column * cellSize + cellSize / 2; })
+        .attr('r', this.radius());
+  };
+
+  function Cell(options) {
+    var defaults = {
+      klass: function(d) {
+          var klasses = ["cell"];
+          if (d.__row === d.__column) {
+            klasses.push("diagonal");
+          }
+          return klasses.join(' ');
+        },
+      fill: idiFill(),
+      click: Object,
+      getFirstItem: function(d) { return d.items[0]; },
+      getSecondItem: function(d) { return d.items[1]; },
+      getItems: function(d) { return d.items; },
+    };
+    Component.call(this, defaults, options);
+  }
+
+  Cell.prototype = new Component({}, {});
+
+  Cell.prototype.preprocess = function(pairs) {
+    var ordered = [],
+        rowIndex = 0,
+        colIndex = 0,
+        getFirst = this.getFirstItem();
+
+    pairs.forEach(function(data, globalIndex) {
+      if (ordered.length > 0 &&
+          getFirst(data) !== getFirst(ordered[ordered.length - 1])) {
+        rowIndex = 0;
+        colIndex += 1;
+      }
+      var computed = {
+        __current: globalIndex,
+        __row: rowIndex,
+        __column: colIndex
+      };
+      ordered.push(extend(computed, data));
+      rowIndex += 1;
+    });
+    this.ordered(ordered);
+    return ordered;
+  };
+
+  Cell.prototype.render = function(data) {
+    var cellSize = this.cellSize();
+    this.vis
+      .append("g")
+      .attr("class", "cells")
+      .selectAll(".cell")
+      .data(data)
+      .enter().append("rect")
+        .attr("class", this.klass())
+        .attr("x", function(d) { return d.__row * cellSize; })
+        .attr("y", function(d) { return d.__column * cellSize; })
+        .attr("width", cellSize)
+        .attr("height", cellSize)
+        .attr("fill", this.fill())
+        .attr('stroke', 'white')
+        .attr('stroke-width', 1)
+        .attr('opacity', this.opacity())
+        .on('click', this.click());
+  };
+
+  function Legend(options) {
+    var defaults = {
+      height: 10,
+      fill: idiFill
+    };
+    Component.call(this, defaults, options);
+  }
+
+  Legend.prototype = new Component({}, {});
+
   function HeatMapPlot(config) {
-    var self = this;
     var defaults = {
       margin: 30,
       size:  550,
       selection: null,
       ordered: [],
       known: {},
-      getFirstItem: function(d) { return d.items[0]; },
-      getSecondItem: function(d) { return d.items[1]; },
-      getItems: function(d) { return d.items; },
-      getID: function(d) { return d.id; },
-      fill: this.colorScale(),
-      click: Object,
       addDefinitions: Object,
       legend: null,
-      legendSize: 10,
-      rotateColumns: true,
-      showOnlyDiagonal: true,
-      markFill: 'black',
-      markOpacity: 1,
-      opacity: '1'
     };
 
     this.pairs = accessor([], function(_, pairs) {
       self.known(self.computeKnown(pairs));
     });
 
-    var conf = extend({}, defaults, config);
+    var self = this,
+        conf = extend({}, defaults, config);
     Object.keys(defaults).forEach(function(k) { self[k] = accessor(conf[k]); });
+
+    accessibleComponent(this, this.pairs, new Cell(config.pairs || {}));
+    accessibleComponent(this, this.marks, new Mark(config.marks || {}));
+    accessibleComponent(this, this.legend, new Legend(config.legend || {}));
+    // TODO: X labels
+    // TODO: Y labels
   }
 
   HeatMapPlot.prototype.computeKnown = function(pairs) {
@@ -221,7 +430,6 @@
         .attr('stroke-width', 0)
         .attr('fill', this.fill());
 
-
     var tickCount = 10,
         values = this.legend().map(function(d) { return d.value; }),
         scale = d3.scale.linear().domain(values),
@@ -266,31 +474,13 @@
       .attr("transform",
           "translate(" + margin + "," + margin + ")");
 
-    this.drawLabels();
-    this.drawCells();
+    this.labels.draw();
+    this.cells.draw();
     if (this.legend()) {
-      this.drawLegend();
+      this.legend.draw();
     }
 
     return this;
-  };
-
-  HeatMapPlot.prototype.colorScale = function() {
-    var isoInterp = d3.interpolateRgb("#B10026", "#E31A1C"),
-        nearInterp = d3.interpolateRgb("#FC4E2A", "#FD8D3C");
-
-    return function(d) {
-      if (d.idi <= 2) {
-        return isoInterp(d.idi);
-      }
-      if (d.idi <= 3.3) {
-        return nearInterp(d.idi);
-      }
-      if (d.idi <= 5) {
-        return '#4292c6';
-      }
-      return '#084594';
-    };
   };
 
   HeatMapPlot.prototype.getPairsInRange = function(d, i) {
@@ -310,31 +500,6 @@
 
     return [diagonal[firsts.indexOf(items[1])],
             diagonal[firsts.indexOf(items[0])]];
-  };
-
-  HeatMapPlot.prototype.mark = function(pairs) {
-    var cellSize = this.cellSize(),
-        percent = 0.60,
-        radius = Math.sqrt(percent * Math.pow(cellSize, 2) / Math.PI);
-
-    this.vis.selectAll('#diagonal-marks').remove();
-
-    this.vis
-      .append('g')
-      .attr('id', 'diagonal-marks')
-      .selectAll(".diagonal-mark")
-      .data(pairs)
-      .enter().append('circle')
-        .attr('pointer-events', 'none')
-        .attr("cx", function(d) {
-          return d.__row * cellSize + cellSize / 2;
-        })
-        .attr("cy", function(d) {
-          return d.__column * cellSize + cellSize / 2;
-        })
-        .attr('r', radius)
-        .attr('fill', this.markFill())
-        .attr('opacity', this.markOpacity());
   };
 
   HeatMapPlot.prototype.show = function(sequences) {
