@@ -175,6 +175,9 @@ $(document).ready(function() {
 
     summary.draw();
 
+    var known = currentData.filter(function(d) { return d.coordinates_exist; });
+    summary.show(known.map(function(e) { return e.id.toUpperCase(); }));
+
     $("#summary-table .cell").tipsy({
       gravity: 's',
       html: true,
