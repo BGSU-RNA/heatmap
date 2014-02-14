@@ -1,55 +1,102 @@
-/*global document, HeatMap, d3, $ */
 $(document).ready(function() {
+  'use strict';
+  /* jshint jquery: true, browser: true */
+  /* global document, HeatMap, d3, Handlebars, jsMolTools, console */
 
   var itemData = {},
-      totalRows = [],
+      currentData = [],
       summaryAttributeRanges = {},
       missingGrey = 'grey',
-      heatMap = HeatMap({ size: 300, selection: '#heat-map' }),
-      summary = HeatMap({ size: 300, selection: '#summary-table', rotateColumns: false });
+      rawUrl = 'static/img/{{family}}/{{family}} _{{sequence}}_exemplar.png',
+      exemplarUrlTemplate = Handlebars.compile(rawUrl),
+      heatMapTemplate = null,
+      summaryTemplate = null,
+      heatMap = new HeatMap({ size: 300, selection: '#heat-map' }),
+      summary = new HeatMap({
+        size: 300,
+        selection: '#summary-table',
+        rotateColumns: false,
+        showOnlyDiagonal: false
+      });
+
+  $.get('static/templates/heat-map-template.hbs', function(string) {
+    heatMapTemplate = Handlebars.compile(string);
+  });
+
+  // This should be done before hovering. I hope.
+  $.get('static/templates/exemplar-hover.hbs', function(string) {
+    summaryTemplate = Handlebars.compile(string);
+  });
+
+  heatMap.fill(function(d) {
+    var getFirst = heatMap.getFirstItem(),
+        scale = heatMap.colorScale();
+    if (d.__row !== d.__column) {
+      return scale(d);
+    }
+    if (d.label || itemData[getFirst(d)].coordinates_exist) {
+      return scale(d);
+    }
+    return missingGrey;
+  });
+
+  summary.markOpacity(0.5);
 
   function generateLegend(range, func) {
     var last = range[1] - range[2];
-    return $.map(d3.range.apply(null, range), function(value, _) {
+    return d3.range.apply(null, range).map(function(value) {
       return func(value, (last - value < 0.0001));
     });
   }
 
-  function jmolWatch() {
-    $('.jmol-toggle').jmolTools({
-      showStereoId: 'jt-stereo',
-      showNumbersId: 'jt-numbers',
-      showNextId: 'jt-next',
-      showPrevId: 'jt-prev',
-      showAllId: 'jt-all'
-    });
+  function showSelected(data, clear) {
 
-    $('.jmol-toggle').on('click', function(event) {
-      var $this = $(this);
-      if ($this.hasClass('success')) {
-        $this.removeClass('success');
-      } else {
-        if (event.ctrlKey || event.metaKey) {
-          totalRows.push($this.data('sequence'));
-          $(this).addClass('success');
-        } else {
-          totalRows = [$this.data('sequence')];
-          $('.jmol-toggle').removeClass('success');
-          $(this).addClass('success');
-        }
-        heatMap.show(totalRows);
-      }
+    // Exclude things where we do not have 3D coordinates
+    var known = data.filter(function(d) { return d.coordinates_exist; });
+
+    // Do nothing if we have selected something that has no 3D
+    if (known.length === 0 && !clear) { return; }
+
+    heatMap.show(known.map(function(e) { return e.sequence; }));
+    summary.show(known.map(function(e) { return e.id.toUpperCase(); }));
+
+    jsMolTools.showOnly(known.map(function(e) {
+      return { id: e.id, unit_ids: e.units.join(',') };
+    }));
+
+    $('.jmol-toggle').removeClass('success');
+    data.forEach(function(datum) {
+      $('#row-' + datum.sequence).addClass('success');
     });
   }
 
-  function toggleRows(rows) {
-    $('.jmol-toggle').removeClass('success');
-    $('.jmol-toggle').jmolHide();
-    $.each(rows, function(_, sequence) {
-      var id = 'row-' + sequence;
-      $("#" + id).addClass('success');
-      $.jmolTools.models[id].show();
+  function handleClick(event, items) {
+    if (event.ctrlKey || event.metaKey) {
+      items.forEach(function(item) {
+        var index = currentData.indexOf(item);
+        if (index === -1) {
+          currentData.push(item);
+        } else {
+          currentData.splice(index, 1);
+        }
+      });
+    } else {
+      currentData = items;
+    }
+
+    showSelected(currentData);
+  }
+
+  function jmolWatch() {
+    $('.jmol-toggle').on('click', function(event) {
+      var data = [itemData[$(this).data('sequence')]];
+      handleClick(event, data);
     });
+  }
+
+  function mapClick(pairs) {
+    var data = pairs.map(function(entry) { return itemData[entry]; });
+    handleClick(d3.event, data);
   }
 
   function updateTable(name, raw) {
@@ -61,7 +108,8 @@ $(document).ready(function() {
             resolution: data.resolution,
             nt1: data.units[0],
             nt2: data.units[1],
-            count: data.count
+            count: data.count,
+            'class': (data.coordinates_exist ? '' : 'warning')
           };
         }),
         order = {};
@@ -79,39 +127,33 @@ $(document).ready(function() {
   }
 
   function summarizeRange(domain, inc, attr, labelText) {
-      var lengendRange = domain.slice(0),
-          max = d3.max(domain),
-          scale = d3.scale.linear()
-            .domain(domain)
-            .range(["#2166ac", "#b2182b"])
-            .interpolate(d3.interpolateRgb);
+    var lengendRange = domain.slice(0),
+        max = d3.max(domain),
+        scale = d3.scale.linear()
+          .domain(domain)
+          .range(["#2166ac", "#b2182b"])
+          .interpolate(d3.interpolateRgb);
 
-      lengendRange.push(inc);
-      var legend = generateLegend(lengendRange, function(value, isLast) {
-        var label = labelText + (isLast ? '>' + value : value),
-            data = {exists: true, value: value, label: label};
-        data[attr] = value;
-        return data;
-      });
+    lengendRange.push(inc);
+    var legend = generateLegend(lengendRange, function(value, isLast) {
+      var label = labelText + (isLast ? '>' + value : value),
+          data = {exists: true, value: value, label: label};
+      data[attr] = value;
+      return data;
+    });
 
-      if (inc < 0) {
-        legend.reverse();
-      }
+    if (inc < 0) {
+      legend.reverse();
+    }
 
-      var fn = function(d, i) { 
-        var value = d[attr];
-        if (!d.exists) {
+    summary
+      .legend(legend)
+      .fill(function(d) {
+        if (!d.exists || d[attr] === null) {
           return missingGrey;
         }
-        if (value > max) {
-          return scale(max);
-        }
-        return scale(value);
-      };
-
-      summary
-        .legend(legend)
-        .fill(fn);
+        return scale(Math.min(d[attr], max));
+      });
   }
 
   function updateSummary() {
@@ -119,17 +161,22 @@ $(document).ready(function() {
 
     if (name === 'exemplar') {
       summary.legend(null);
-      summary.fill(function(d, i) { return d.image; });
+      summary.fill(function(d) {
+        return (d.exists ? 'url(#' + d.name + ')' : missingGrey);
+      });
 
     } else if (name === 'count') {
       var countMax = d3.min([summaryAttributeRanges.count[1], 400]);
-
       summarizeRange([0, countMax], 1, 'count', 'Count: ');
+
     } else if (name === 'resolution') {
       summarizeRange([4, 0], -0.01, 'resolution', 'Resolution: ');
-    } 
+    }
 
     summary.draw();
+
+    var known = currentData.filter(function(d) { return d.coordinates_exist; });
+    summary.show(known.map(function(e) { return e.id.toUpperCase(); }));
 
     $("#summary-table .cell").tipsy({
       gravity: 's',
@@ -142,71 +189,64 @@ $(document).ready(function() {
       //   return [bbox.left + bbox.width/2, 10 * bbox.top];
       // },
       title: function() {
-        var data = this.__data__;
-        return '<p><span>Count: ' + data.count + '</span></p>' +
-          '<p><span>Resolution: ' + data.resolution + '</span></p>'
-      ;
+        var data = this.__data__,
+            resolution = data.resolution || 'NA',
+            context = $.extend({}, data, {resolution: resolution});
+        return summaryTemplate(context);
       }
     });
   }
 
-  function setUpSummary(family) {
-    var fillFn = Object,
-        known = heatMap.known(),
-        nts = ["A", "C", "G", "U"],
+  function aggregateItems(family, known, items) {
+
+    var nts = ['A', 'C', 'G', 'U'],
         data = [],
-        defs = [],
-        cellSize = summary.cellSize(4);
+        knownValues = function(sequence, name) {
+          return $.map(known[sequence], function(combination) {
+            return items[combination][name];
+          });
+        };
 
-    var knownValues = function(sequence, name) {
-      if (!known[sequence]) {
-        return [0];
-      }
-      return $.map(known[sequence], function(combination, _) {
-        return itemData[combination][name];
-      });
-    };
-
-    summaryAttributeRanges = {
-      count: [],
-      distance: []
-    };
-
-    $.each(nts, function(_, first) {
-      $.each(nts, function(_, second) {
+    nts.forEach(function(first) {
+      nts.forEach(function(second) {
         var sequence = first + second,
-            imageFill = missingGrey,
-            count = d3.sum(knownValues(sequence, 'count')),
-            distance = d3.median(knownValues(sequence, 'distance'));
+            entry = {
+              id: family.toUpperCase() + '-' + sequence.toUpperCase(),
+              sequence: sequence,
+              items: [first, second],
+              count: 0,
+              distance: false,
+              resolution: false,
+              exists: known.hasOwnProperty(sequence),
+              image: missingGrey
+            };
 
-        if (known.hasOwnProperty(sequence)) {
-          var url = 'static/img/' + family + '/' + family + ' _' + sequence + '_exemplar.png',
-              fillName = family + '-' + sequence + '-basepair';
-          imageFill = 'url(#' + fillName + ')';
-          defs.push({name: fillName, url: url});
+        if (entry.exists) {
+          entry.url = exemplarUrlTemplate({family: family, sequence: sequence});
+          entry.name = family + '-' + sequence + '-basepair';
+          entry.count = d3.sum(knownValues(sequence, 'count'));
+          entry.distance = d3.median(knownValues(sequence, 'distance'));
+
+          // Have to deal with modeled things which have no resolution.
+          // This isn't the most elegant but it works.
+          entry.resolution = d3.median(knownValues(sequence, 'resolution'));
+          entry.resolution = entry.resolution || null;
         }
 
-        summaryAttributeRanges.count.push(count);
-        summaryAttributeRanges.distance.push(distance);
-
-        data.push({
-          'sequence': sequence,
-          'items': [first, second],
-          'count': count,
-          'resolution': d3.median(knownValues(sequence, 'resolution')),
-          'distance': distance,
-          'image': imageFill,
-          'exists': known.hasOwnProperty(sequence),
-        });
+        data.push(entry);
       });
     });
 
-    summaryAttributeRanges.count = d3.extent(summaryAttributeRanges.count);
-    summaryAttributeRanges.distance = d3.extent(summaryAttributeRanges.distance);
+    return data;
+  }
 
-    summary.pairs(data);
+  function generateDefs(data) {
+    var defs = $.map(data, function(entry) {
+      return (entry.exists ?  {name: entry.name, url: entry.url} : null);
+    });
 
-    summary.addDefinitions(function(svg) {
+    return function(svg) {
+      var cellSize = this.cellSize();
       $.each(defs, function(_, def) {
         svg.append('svg:pattern')
           .attr('id', def.name)
@@ -218,11 +258,29 @@ $(document).ready(function() {
             .attr('width', cellSize)
             .attr('height', cellSize);
       });
-    });
-
-    updateSummary();
+    };
   }
 
+  function summarizeItems(items) {
+    summaryAttributeRanges = {count: [], resolution: []};
+    $.each(items, function(_, item) {
+      summaryAttributeRanges.count.push(item.count);
+      summaryAttributeRanges.resolution.push(item.resolution);
+    });
+    summaryAttributeRanges.count = [0, d3.max(summaryAttributeRanges.count)];
+    summaryAttributeRanges.resolution = [0, d3.max(summaryAttributeRanges.resolution)];
+  }
+
+  function setUpSummary(family, items) {
+    var known = heatMap.known(),
+        data = aggregateItems(family, known, items),
+        defFn = generateDefs(data);
+
+    summarizeItems(items);
+    summary.addDefinitions(defFn);
+    summary.pairs(data);
+    updateSummary();
+  }
 
   function loadFamily() {
     var name = $("#family-selector").val(),
@@ -241,42 +299,48 @@ $(document).ready(function() {
         gravity: 's',
         html: true,
         title: function() {
-          var data = this.__data__;
-          return '<span>' + data.items.join(' ') + ': ' + data.idi.toFixed(2) + '</span>';
+          var data = $.extend({}, this.__data__);
+          data.sequence = data.items.join(' ');
+          data.idi = data.idi.toFixed(2);
+          return heatMapTemplate(data);
         }
       });
 
-      setUpSummary(name);
+      setUpSummary(name, data.items);
     });
   }
 
-  function mapClick(rows) {
-    if (d3.event.ctrlKey || d3.event.metaKey) {
-      totalRows = totalRows.concat(rows);
-    } else {
-      totalRows = rows;
-    }
-    toggleRows(totalRows);
-    heatMap.show(totalRows);
-  }
-
   heatMap.click(function(d, i) {
-    mapClick(heatMap.getPairsInRange(d, i));
+    var pairs = heatMap.getPairsInRange(d, i);
+    mapClick(pairs.map(function(d) { return d.items[0]; }));
   });
 
-  summary.click(function(d, i) {
+  summary.click(function(d) {
     var known = heatMap.known();
     mapClick(known[d.sequence]);
   });
 
   heatMap.legend(generateLegend([0, 6, 0.1], function(idi, isLast) {
     var label = 'IDI: ' + (isLast ? '>' + idi : idi);
-    return {'value': idi, 'idi': idi, 'label': label};
+    return {value: idi, idi: idi, label: label};
   }));
 
   $('.chosen-select').chosen();
   $('#family-selector').change(loadFamily);
   $('#coloring-selector').change(updateSummary);
+  // $('#jt-numbers').jsMolTools.numberToggle();
+
+  $('#jt-clear').on('click', function() {
+    currentData = [];
+    showSelected(currentData, true);
+    $('.jmol-toggle').removeClass('success');
+  });
+
+  $("#jt-numbers").on('click', function() {
+    jsMolTools.toggleNumbers();
+    $(this).button('toggle');
+  });
+
   loadFamily();
 
 });

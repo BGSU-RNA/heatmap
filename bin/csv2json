@@ -6,39 +6,61 @@ import csv
 import sys
 import json
 
+import itertools as it
+
+import requests
+
+URL = 'http://rna.bgsu.edu/rna3dhub/rest/getCoordinates'
+
 
 def generate_data(header, rows):
     data = {'items': {}, 'pairs': []}
 
     names = map(lambda r: r[1], rows)
 
-    for row in rows:
-        row = dict(zip(header, row))
+    for row in it.imap(lambda r: dict(it.izip(header, r)), rows):
         first = row['Base combination']
         family = row['Family']
-        if family[1] != family[2]:
-            pass
+        known = True
+        units = [row['NT1ID'], row['NT2ID']]
+
         pdb = row['PDBID']
-        resolution = row['Resolution']
-        if 'CURATED' in pdb:
-            pdb = pdb.split('_')[1]
+        if row['Resolution'] == 'NaN':
+            resolution = None
+        else:
             resolution = float(row['Resolution'])
+
         if 'MODEL' in pdb:
             pdb = 'Modeled'
-            resolution = '-'
+            resolution = None
+            known = False
+        elif 'CURATED' in pdb:
+            pdb = pdb.split('_')[1]
+
+        # We have to detect if we can get the coordinates for the given item.
+        # The only way to do this in cases where we have a unit ids is to make
+        # a request for that set of coordiantes and see if it worked.
+        if known:
+            response = requests.post(URL, data={'coord': ','.join(units)})
+            if 'MODEL' not in response.text:
+                known = False
 
         data['items'][first] = {
-            'units': [row['NT1ID'], row['NT2ID']],
+            'id': '%s-%s' % (family, first),
+            'units': units,
             'pdb': pdb,
             'resolution': resolution,
             'group': row['LW 2002 subgroup'],
             'family': family,
             'distance': float(row['C1*-C1* distance']),
-            'count': int(row['Count'])
+            'count': int(row['Count']),
+            'sequence': first,
+            'coordinates_exist': known
         }
         for key in names:
             if re.match('^[ACGUacgu]{2}$', key):
                 data['pairs'].append({
+                    'id': '%s-%s-%s' % (family, first, key),
                     'idi': float(row[key]),
                     'items': [first, key]
                 })
@@ -62,7 +84,7 @@ def load_data(raw, family):
     for index, row in enumerate(rows):
         family = row[f_index]
         sequence = row[c_index]
-        if family[1] == family[2]:
+        if family[1] == family[2] or family[1].lower() != family[2].lower():
             name = sequence
         elif family[1] == family[1].upper():
             name = sequence[0] + sequence[1].lower()
@@ -76,7 +98,7 @@ def load_data(raw, family):
 
 def save(data):
     json.dump(data, sys.stdout)
-    # json.dumps(data)
+   # json.dumps(data)
 
 
 def main(filename):
