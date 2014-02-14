@@ -70,30 +70,33 @@ $(document).ready(function() {
     });
   }
 
+  function handleClick(event, items) {
+    if (event.ctrlKey || event.metaKey) {
+      items.forEach(function(item) {
+        var index = currentData.indexOf(item);
+        if (index === -1) {
+          currentData.push(item);
+        } else {
+          currentData.splice(index, 1);
+        }
+      });
+    } else {
+      currentData = items;
+    }
+
+    showSelected(currentData);
+  }
+
   function jmolWatch() {
     $('.jmol-toggle').on('click', function(event) {
-      var $this = $(this),
-          data = itemData[$this.data('sequence')];
-
-      if (event.ctrlKey || event.metaKey) {
-        currentData.push(data);
-      } else {
-        currentData = [data];
-      }
-
-      showSelected(currentData);
+      var data = [itemData[$(this).data('sequence')]];
+      handleClick(event, data);
     });
   }
 
   function mapClick(pairs) {
     var data = pairs.map(function(entry) { return itemData[entry]; });
-    if (d3.event.ctrlKey || d3.event.metaKey) {
-      currentData = currentData.concat(data);
-    } else {
-      currentData = data;
-    }
-
-    showSelected(currentData);
+    handleClick(d3.event, data);
   }
 
   function updateTable(name, raw) {
