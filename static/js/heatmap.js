@@ -325,6 +325,7 @@
       .selectAll(".diagonal-mark")
       .data(pairs)
       .enter().append('circle')
+        .attr('pointer-events', 'none')
         .attr("cx", function(d) {
           return d.__row * cellSize + cellSize / 2;
         })
