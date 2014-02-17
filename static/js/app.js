@@ -6,7 +6,7 @@ $(document).ready(function() {
   var itemData = {},
       currentData = [],
       summaryAttributeRanges = {},
-      missingGrey = 'grey',
+      missingGrey = 'white',
       rawUrl = 'static/img/{{family}}/{{family}}_{{sequence}}_exemplar.png',
       exemplarUrlTemplate = Handlebars.compile(rawUrl),
       heatMapTemplate = null,
