@@ -1,141 +1,127 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>Leontis/Westhof Basepair Catalog</title>
-  <link href='static/css/chosen.css' rel='stylesheet'>
-  <link href='static/css/tipsy.css' rel='stylesheet'>
-  <link href='static/css/bootstrap.min.css' rel='stylesheet'>
-  <link href='static/css/main.css' rel='stylesheet'>
+<meta charset="utf-8">
+<title>RNA basepair catalog Basepair Catalog</title>
+<link href='static/css/chosen.css' rel='stylesheet'>
+<link href='static/css/tipsy.css' rel='stylesheet'>
+<link href='static/css/bootstrap.min.css' rel='stylesheet'>
+<link href='static/css/main.css' rel='stylesheet'>
 
-  <script src='static/js/jquery.min.js'></script>
-  <script src='static/jsmol/JSmol.min.nojq.js'></script>
+<script src='static/js/jquery.min.js'></script>
+<script src='static/jsmol/JSmol.min.nojq.js'></script>
 </head>
 
 <body>
 
-  <div id='content' class='container'>
-    <div class='page-header'>
-      <h1>Leontis/Westhof Basepair Catalog</h1>
-    </div>
+<div id='content' class='container'>
+  <div class='page-header'>
+    <h1>RNA basepair catalog, organized by Leontis-Westhof Annotations</h1>
+  </div>
 
-    <div id='about-container' class='row'>
+  <div id='about-container' class='row'>
 
-      <div class='col-md-5'>
-        <form role='form' id='select-family' class='form-horizontal' action=''>
+    <div class='col-md-5'>
+      <form role='form' id='select-family' class='form-horizontal' action=''>
 
-          <div class="form-group">
-            <label for='family-selector' class='col-md-4 control-label'>
-              Select a Family
-            </label>
-            <div class='col-md-6'>
-              <select id='family-selector' class='chosen-select'>
-                <option value='cWW' selected>cis Watson/Watson</option>
-                <option value='tWW'>trans Watson/Watson</option>
-                <option value='cWS'>cis Watson/Sugar</option>
-                <option value='tWS'>trans Watson/Sugar</option>
-                <option value='cWH'>cis Watson/Hoogsteen</option>
-                <option value='tWH'>trans Watson/Hoogsteen</option>
-                <option value='cSS'>cis Sugar/Sugar</option>
-                <option value='tSS'>trans Sugar/Sugar</option>
-                <option value='cHS'>cis Hoogsteen/Sugar</option>
-                <option value='tHS'>trans Hoogsteen/Sugar</option>
-                <option value='cHH'>cis Hoogsteen/Hoogsteen</option>
-                <option value='tHH'>trans Hoogsteen/Hoogsteen</option>
-              </select>
-            </div>
+        <div class="form-group">
+          <label for='family-selector' class='col-md-4 control-label'>
+            Select a Family
+          </label>
+          <div class='col-md-6'>
+            <select id='family-selector' class='chosen-select'>
+              <option value='cWW' selected>cis Watson-Crick/Watson-Crick</option>
+              <option value='tWW'>trans Watson-Crick/Watson-Crick</option>
+              <option value='cWS'>cis Watson-Crick/Sugar</option>
+              <option value='tWS'>trans Watson-Crick/Sugar</option>
+              <option value='cWH'>cis Watson-Crick/Hoogsteen</option>
+              <option value='tWH'>trans Watson-Crick/Hoogsteen</option>
+              <option value='cSS'>cis Sugar/Sugar</option>
+              <option value='tSS'>trans Sugar/Sugar</option>
+              <option value='cHS'>cis Hoogsteen/Sugar</option>
+              <option value='tHS'>trans Hoogsteen/Sugar</option>
+              <option value='cHH'>cis Hoogsteen/Hoogsteen</option>
+              <option value='tHH'>trans Hoogsteen/Hoogsteen</option>
+            </select>
           </div>
-
-              <div class="form-group">
-                <label for='coloring-selector' class='col-md-4 control-label'>
-                  Summarize Using
-                </label>
-                <div class='col-md-6'>
-                  <select id='coloring-selector' class='chosen-select'>
-                    <option value="exemplar" selected>Exemplars</option>
-                    <option value="count">Count</option>
-                    <option value="resolution">Resolution</option>
-                    <!-- <option value="distance">C1'-C1' Distance</option> -->
-                  </select>
-                </div>
-              </div>
-
-              <div class='form-group'>
-                <button id='jt-clear' type='button' class='btn btn-default'>Clear Selected</button>
-                <button id='jt-numbers' type='button' class='btn btn-default'>Show Numbers</button>
-              </div>
-          </form>
         </div>
+      </form>
 
       <div class='col-md-7'>
         <p>Some help text</p>
         <button type='button' class='btn btn-info disabled'>More Help</button>
       </div>
     </div>
+  </div>
 
-    <hr>
+  <hr>
 
-    <div id='display-container' class='row'>
+  <div id='display-container' class='row'>
 
-      <div id='summary-table' class='col-md-4'>
-      </div>
-
-      <div id='jsmol' class='col-md-4'>
-          <script type="text/javascript">
-            Jmol.getProfile();
-
-            var config = {
-              width: 370,
-              height: 370,
-              debug: false,
-              // color: "white",
-              color: "#F0F0F0",
-              addSelectionOptions: false,
-              use: "HTML5",
-              j2sPath: "static/jsmol/j2s",
-              isSigned: false,
-              disableJ2SLoadMonitor: true,
-              disableInitialConsole: true,
-              allowjavascript: true
-            };
-            jmolApplet0 = Jmol.getApplet("jmolApplet0", config)
-
-            // these are conveniences that mimic behavior of Jmol.js and
-            // required for jmolTools to work.
-            function jmolScript(cmd) {Jmol.script(jmolApplet0, cmd)}
-            function jmolScriptWait(cmd) {Jmol.scriptWait(jmolApplet0, cmd)}
-          </script>
-
-          <!-- <form role='form form-inline'> -->
-          <!--   <button id='jt-prev' class='btn btn-default'>Previous</button> -->
-          <!--   <button id='jt-next' class='btn btn-default'>Next</button> -->
-          <!--   <button id='jt-all' class='btn btn-default'>Show All</button> -->
-          <!--   <button id='jt-numbers' class='btn btn-default'>Numbers</button> -->
-          <!--   <button id='jt-stereo' class='btn btn-default'>Stereo</button> -->
-          <!-- </form> -->
-      </div>
-
-      <div id='heat-map' class='col-md-4'></div>
+    <div class='col-md-6'>
+      <form role='form' id='summary-controls' class='form-horizontal' action=''>
+        <div class="form-group">
+          <label for='coloring-selector' class='col-md-4 control-label'>
+            Summarize Using
+          </label>
+          <div class='col-md-6'>
+            <select id='coloring-selector' class='chosen-select'>
+              <option value="exemplar" selected>Exemplars</option>
+              <option value="count">Count</option>
+              <option value="resolution">Resolution</option>
+              <!-- <option value="distance">C1'-C1' Distance</option> -->
+            </select>
+          </div>
+        </div>
+      </form>
+      <div id="summary-table"></div>
     </div>
 
-    <hr>
+    <div class='col-md-6'>
 
-    <div id='data-container'>
-      <div id='table-container' class='col-md-9'></div>
+      <div id='jsmol' class='col-md-7'>
+        <script type="text/javascript" src='static/js/jsmol-init.js'></script>
+      </div>
 
-      <div id='download-container' class='col-md-3'>
-        <form role='form' action=''>
-          <legend>Download Links</legend>
-          <div class="form-group">
-            <button type='button' class="disabled btn btn-success">Download Selected</button>
+      <div class='col-md-4'>
+        <form role='form' id='jsmol-controls' action=''>
+          <div class='form-group'>
+            <button id='jt-clear' type='button' class='btn btn-default'>Clear Selected</button>
           </div>
-          <div class="form-group">
-            <button type='button' class="disabled btn btn-success">Download All</button>
+
+          <div class='form-group'>
+            <button id='jt-numbers' type='button' class='btn btn-default'>
+              Show Nucleotide Numbers
+            </button>
           </div>
         </form>
       </div>
+
+      <div id='heat-map' class='col-md-7'></div>
+
+
     </div>
+
   </div>
+
+<hr>
+
+<div id='data-container'>
+  <div id='table-container' class='col-md-9'></div>
+
+  <div id='download-container' class='col-md-3'>
+    <form role='form' action=''>
+      <legend>Download Links</legend>
+      <div class="form-group">
+        <button type='button' class="disabled btn btn-success">Download Selected</button>
+      </div>
+      <div class="form-group">
+        <button type='button' class="disabled btn btn-success">Download All</button>
+      </div>
+    </form>
+  </div>
+</div>
+</div>
 
 <script src='static/js/handlebars.js'></script>
 <script src='static/js/d3.js'></script>

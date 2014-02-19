@@ -13,7 +13,7 @@ $(document).ready(function() {
       summaryTemplate = null,
       heatMap = new HeatMap({ size: 300, selection: '#heat-map' }),
       summary = new HeatMap({
-        size: 300,
+        size: 550,
         selection: '#summary-table',
         rotateColumns: false,
         showOnlyDiagonal: false
