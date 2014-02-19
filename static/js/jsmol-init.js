@@ -1,3 +1,5 @@
+/* globals Jmol */
+
 Jmol.getProfile();
 
 var jsMolSize = 300;
