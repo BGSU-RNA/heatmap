@@ -23,14 +23,13 @@ $(document).ready(function() {
     heatMapTemplate = Handlebars.compile(string);
   });
 
-  // This should be done before hovering. I hope.
   $.get('static/templates/exemplar-hover.hbs', function(string) {
     summaryTemplate = Handlebars.compile(string);
   });
 
-  heatMap.fill(function(d) {
-    var getFirst = heatMap.getFirstItem(),
-        scale = heatMap.colorScale();
+  heatMap.pairs.fill(function(d) {
+    var getFirst = heatMap.pairs.getFirstItem(),
+        scale = heatMap.pairs.idiFill();
     if (d.__row !== d.__column) {
       return scale(d);
     }
@@ -40,7 +39,7 @@ $(document).ready(function() {
     return missingGrey;
   });
 
-  summary.markOpacity(0.5);
+  // summary.marks.attr('opacity', 0.5);
 
   function generateLegend(range, func) {
     var last = range[1] - range[2];
@@ -57,8 +56,8 @@ $(document).ready(function() {
     // Do nothing if we have selected something that has no 3D
     if (known.length === 0 && !clear) { return; }
 
-    heatMap.show(known.map(function(e) { return e.sequence; }));
-    summary.show(known.map(function(e) { return e.id.toUpperCase(); }));
+    // heatMap.show(known.map(function(e) { return e.sequence; }));
+    // summary.show(known.map(function(e) { return e.id.toUpperCase(); }));
 
     jsMolTools.showOnly(known.map(function(e) {
       return { id: e.id, unit_ids: e.units.join(',') };
@@ -146,8 +145,9 @@ $(document).ready(function() {
       legend.reverse();
     }
 
-    summary
-      .legend(legend)
+    summary.legend(legend);
+
+    summary.pairs
       .fill(function(d) {
         if (!d.exists || d[attr] === null) {
           return missingGrey;
@@ -161,7 +161,7 @@ $(document).ready(function() {
 
     if (name === 'exemplar') {
       summary.legend(null);
-      summary.fill(function(d) {
+      summary.pairs.attr('fill', function(d) {
         return (d.exists ? 'url(#' + d.name + ')' : missingGrey);
       });
 
@@ -175,8 +175,8 @@ $(document).ready(function() {
 
     summary.draw();
 
-    var known = currentData.filter(function(d) { return d.coordinates_exist; });
-    summary.show(known.map(function(e) { return e.id.toUpperCase(); }));
+    // var known = currentData.filter(function(d) { return d.coordinates_exist; });
+    // summary.show(known.map(function(e) { return e.id.toUpperCase(); }));
 
     $("#summary-table .cell").tipsy({
       gravity: 's',
@@ -282,9 +282,8 @@ $(document).ready(function() {
     updateSummary();
   }
 
-  function loadFamily() {
-    var name = $("#family-selector").val(),
-        url = 'static/data/' + name + '.json';
+  function loadFamily(name) {
+    var url = 'static/data/' + name + '.json';
 
     currentData = [];
 
@@ -313,26 +312,27 @@ $(document).ready(function() {
     });
   }
 
-  heatMap.click(function(d, i) {
+  heatMap.pairs.click(function(d, i) {
     var pairs = heatMap.getPairsInRange(d, i);
     mapClick(pairs.map(function(d) { return d.items[0]; }));
   });
 
-  summary.click(function(d) {
+  summary.pairs.click(function(d) {
     var known = heatMap.known();
     mapClick(known[d.sequence]);
   });
 
-  heatMap.legend(generateLegend([0, 6, 0.1], function(idi, isLast) {
-    var label = 'IDI: ' + (isLast ? '>' + idi : idi);
-    return {value: idi, idi: idi, label: label};
-  }));
+  // heatMap.legend(generateLegend([0, 6, 0.1], function(idi, isLast) {
+  //   var label = 'IDI: ' + (isLast ? '>' + idi : idi);
+  //   return {value: idi, idi: idi, label: label};
+  // }));
 
   $('.chosen-select').chosen();
   $('#family-selector').change(function() {
+    var name = $(this).val();
     currentData = [];
     jsMolTools.showOnly([]);
-    loadFamily();
+    loadFamily(name);
   });
   $('#coloring-selector').change(updateSummary);
   // $('#jt-numbers').jsMolTools.numberToggle();
@@ -348,6 +348,6 @@ $(document).ready(function() {
     $(this).button('toggle');
   });
 
-  loadFamily();
+  loadFamily($("#family-selector").val());
 
 });
