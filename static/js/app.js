@@ -75,21 +75,37 @@ $(document).ready(function() {
     });
   }
 
+  function clearDisplay() {
+    currentData = [];
+    heatMap.active.clear();
+    summary.active.clear();
+    jsMolTools.showOnly([]);
+    $('.jmol-toggle').removeClass('success');
+  }
+
   function handleClick(event, items) {
     if (event.ctrlKey || event.metaKey) {
-      items.forEach(function(item) {
-        var index = currentData.indexOf(item);
-        if (index === -1) {
-          currentData.push(item);
-        } else {
-          currentData.splice(index, 1);
+      var seen = {};
+      items.forEach(function(item) { seen[item.id] = item; });
+
+      currentData = currentData.filter(function(d) {
+        if (seen[d.id]) {
+          delete seen[d.id];
+          return false;
         }
+        return true;
       });
+
+      Object.keys(seen).forEach(function(k) { currentData.push(seen[k]); });
     } else {
       currentData = items;
     }
 
-    showSelected(currentData);
+    if (!currentData.length) {
+      clearDisplay();
+    } else {
+      showSelected(currentData);
+    }
   }
 
   function jmolWatch() {
@@ -344,12 +360,7 @@ $(document).ready(function() {
   });
   $('#coloring-selector').change(updateSummary);
 
-  $('#jt-clear').on('click', function() {
-    currentData = [];
-    heatMap.active.clear();
-    summary.active.clear();
-    $('.jmol-toggle').removeClass('success');
-  });
+  $('#jt-clear').on('click', clearDisplay);
 
   $("#jt-numbers").on('click', function() {
     jsMolTools.toggleNumbers();
