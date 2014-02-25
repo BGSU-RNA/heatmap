@@ -2,7 +2,7 @@
 
 Jmol.getProfile();
 
-var jsMolSize = 300;
+var jsMolSize = 340;
 
 var config = {
   width: jsMolSize,
