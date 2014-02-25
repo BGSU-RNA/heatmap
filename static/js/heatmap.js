@@ -1,373 +1,515 @@
 (function () {
-  'use strict';
-  /*globals window, d3 */
+function extend(out) {
+  var i, key;
+  out = out || {};
 
-  function extend(out) {
-    var i, key;
-    out = out || {};
-
-    for (i = 1; i < arguments.length; i+=1) {
-      if (!arguments[i]) {
-        continue;
-      }
-
-      for (key in arguments[i]) {
-        if (arguments[i].hasOwnProperty(key)) {
-          out[key] = arguments[i][key];
-        }
-      }
+  for (i = 1; i < arguments.length; i+=1) {
+    if (!arguments[i]) {
+      continue;
     }
 
-    return out;
+    for (key in arguments[i]) {
+      if (arguments[i].hasOwnProperty(key)) {
+        out[key] = arguments[i][key];
+      }
+    }
   }
 
-  function accessor(initial, callback) {
-    return (function() {
-      var value = initial;
-      return function(x) {
-        if (!arguments.length) {
-          return value;
-        }
-        if (callback) {
-          callback(value, x);
-        }
-        value = x;
-        return this;
-      };
-    }());
-  }
+  return out;
+}
 
-  var generateComponent = function(plot, defaults, options) {
-
-    var attrs = [],
-        standard = { click: Object };
-
-    defaults = extend({}, standard, defaults);
-
-    this.attr = function(key, value) {
-      attrs.push({key: key, value: value});
+function accessor(initial, callback) {
+  return (function() {
+    var value = initial;
+    return function(x) {
+      if (!arguments.length) {
+        return value;
+      }
+      if (callback) {
+        callback(value, x);
+      }
+      value = x;
       return this;
     };
+  }());
+}
 
-    this.draw = function(raw) {
-      var data = this.preprocess(raw),
-          selection = this.render(data);
+(function (global, factory) {
+  if (typeof define === "function" && define.amd) { define(factory); }
+  else if (typeof module === "object") { module.exports = factory(); }
+  else { global.augment = factory(); }
+}(this, function () {
+  "use strict";
 
-      attrs.forEach(function(attr) {
-        selection.attr(attr.key, attr.value);
-      });
-      return this;
-    };
+  var Factory = function () {};
+  var slice = Array.prototype.slice;
 
-    this.cellSize = function() { return this._plot.cellSize(); };
+  return function (base, body) {
+    var uber = Factory.prototype = typeof base === "function" ? base.prototype : base;
+    var prototype = new Factory;
+    body.apply(prototype, slice.call(arguments, 2).concat(uber));
+    if (!prototype.hasOwnProperty("constructor")) return prototype;
+    var constructor = prototype.constructor;
+    constructor.prototype = prototype;
+    return constructor;
+  };
+}));
 
-    this.ordered = function() {
-      return this._plot.ordered.apply(this._plot, arguments);
-    };
+function dispatch(obj, method) {
+  return function() { return obj[method].apply(obj, arguments); };
+}
 
+var Component = augment(Object, function () {
+  'use strict';
+
+  this.constructor = function(plot, type, defaults) {
     var self = this,
-        config = extend({}, defaults, options);
+        standard = {click: Object},
+        config = extend({}, standard, defaults);
 
-    Object.keys(defaults).forEach(function(key) {
+    this._plot = plot;
+    this._type = type;
+    this._attrs = [];
+    this.cellSize = dispatch(plot, 'cellSize');
+    this.ordered = dispatch(plot, 'ordered');
+    this.getItems = dispatch(plot, 'getItems');
+    this.getFirstItem = dispatch(plot, 'getFirstItem');
+    this.getSecondItem = dispatch(plot, 'getSecondItem');
+    this.getID = dispatch(plot, 'getID');
+    this.columns = dispatch(plot, 'columns');
+    this.rows = dispatch(plot, 'rows');
+
+    Object.keys(config).forEach(function(key) {
       self[key] = accessor(config[key]);
     });
 
-    this._plot = plot;
+    return this;
+  };
+
+  this.attr = function(key, value) {
+    this._attrs.push({key: key, value: value});
+    return this;
+  };
+
+  this.preprocess = function(d) {
+    if (d) {
+      return d;
+    }
+    return (this.data ? this.data() : []);
+  };
+
+  this.selector = function() { return '.' + this.groupClass(); };
+
+  this.clear = function() {
+    this._plot.vis.selectAll(this.selector()).remove();
+    return this;
+  };
+
+  /**
+   * Draw this component
+   **/
+  this.draw = function(raw) {
+    var self = this,
+        data = this.preprocess(raw);
+
+    if (!data || !data.length) {
+      return this;
+    }
+
+    this.clear().
+      _plot.vis
+        .append('g')
+        .attr('class', this.groupClass())
+        .selectAll(this.selector())
+        .data(data).enter()
+        .append(this._type)
+        .attr('class', this.klass())
+        .call(function(selection) { self.render.call(self, selection, data); })
+        .call(function (selection) {
+          self._attrs.forEach(function(attr) {
+            selection.attr(attr.key, attr.value);
+          });
+        })
+        .on('click', this.click());
 
     return this;
   };
 
-  var generateCell = function(plot, options) {
-    
-    this.idiFill = function() {
-      var isoInterp = d3.interpolateRgb("#B10026", "#E31A1C"),
-          nearInterp = d3.interpolateRgb("#FC4E2A", "#FD8D3C");
+});
 
-      return function(d) {
-        if (d.idi <= 2) {
-          return isoInterp(d.idi);
-        }
-        if (d.idi <= 3.3) {
-          return nearInterp(d.idi);
-        }
-        if (d.idi <= 5) {
-          return '#4292c6';
-        }
-        return '#084594';
-      };
+var Label = augment(Component, function(parent) {
+  'use strict';
+
+  this.constructor = function(plot, type, opts) {
+    var defaults = {
+      groupClass: type + '-labels',
+      klass: type + '-label',
+      rotate: true,
+      'text-anchor': 'end',
     };
 
+    parent.constructor.call(this, plot, 'svg:text', extend(defaults, opts));
+  };
+
+  this.x = function() { return function() { return 0; }; };
+  this.y = function() { return function() { return -2; }; };
+
+  this.transform = function() {
+    var self = this,
+        translate = '';
+    if (this.rotate()) {
+      translate = function(d, i) {
+        var cellSize = self.cellSize(),
+            x = i * cellSize + (cellSize/2);
+        return "rotate(-90 " + x + ",-2)";
+      };
+    }
+    return translate;
+  };
+
+  this.render = function(selection) {
+    selection
+      .text(String)
+      .attr('x', this.x())
+      .attr('y', this.y())
+      .attr('text-anchor', this['text-anchor']())
+      .attr('transform', this.transform());
+  };
+});
+
+var ColumnLabel = augment(Label, function(parent) {
+  'use strict';
+
+  this.constructor = function(plot) {
+    parent.constructor.call(this, plot, 'column', {'text-anchor': 'left'});
+
+    this.preprocess = dispatch(plot, 'columns');
+  };
+
+  this.x = function() {
+    var cellSize = this.cellSize();
+    return function (d, i) { return i * cellSize + (cellSize/2); };
+  };
+});
+
+var RowLabel = augment(Label, function(parent) {
+  'use strict';
+
+  this.constructor = function(plot) {
+    parent.constructor.call(this, plot, 'row', {rotate: false});
+
+    this.preprocess = dispatch(plot, 'rows');
+  };
+
+  this.transform = function() {
+    return "translate(-6," + this.cellSize() / 1.5 + ")";
+  };
+
+  this.y = function() {
+    var cellSize = this.cellSize();
+    return function(_, i) { return i * cellSize; };
+  };
+});
+
+var LegendLabel = augment(Label, function(parent) {
+  'use strict';
+
+  this.constructor = function(plot, legend) {
+    var defaults = {
+      rotate: false,
+      'text-anchor': 'middle',
+    };
+    this._legend = legend;
+    parent.constructor.call(this, plot, 'legend', defaults);
+  };
+
+  this.x = function() { return this._legend.x(); };
+  this.y = function() { return this._legend.y() - this._legend.size(); };
+
+  this.preprocess = function() {
+    var data = this._legend.data();
+    return (data ? data.map(this._legend.getText()) : data);
+  };
+});
+
+var Cell = augment(Component, function (parent) {
+  'use strict';
+
+  this.constructor = function (plot) {
     var defaults = {
       klass: function(d) {
-          var klasses = ["cell"];
-          if (d.__row === d.__column) {
-            klasses.push("diagonal");
-          }
-          return klasses.join(' ');
-        },
-      fill: this.idiFill(),
-      getFirstItem: function(d) { return d.items[0]; },
-      getSecondItem: function(d) { return d.items[1]; },
-      getItems: function(d) { return d.items; },
-    };
-
-    generateComponent.call(this, plot, defaults, options);
-
-    this.preprocess = function(pairs) {
-      var ordered = [],
-          rowIndex = 0,
-          colIndex = 0,
-          getFirst = this.getFirstItem();
-
-      pairs.forEach(function(data, globalIndex) {
-        if (ordered.length > 0 &&
-            getFirst(data) !== getFirst(ordered[ordered.length - 1])) {
-          rowIndex = 0;
-          colIndex += 1;
+        var klasses = ["cell"];
+        if (d.__row === d.__column) {
+          klasses.push("diagonal");
         }
-        var computed = {
-          __current: globalIndex,
-          __row: rowIndex,
-          __column: colIndex
-        };
-        ordered.push(extend(computed, data));
-        rowIndex += 1;
-      });
-      this.ordered(ordered);
-      return ordered;
+        return klasses.join(' ');
+      },
+      groupClass: 'cells',
+      fill: this.idiFill(),
     };
 
-    this.render = function(data) {
-      var cellSize = this.cellSize();
-
-      return this._plot.vis
-        .append("g")
-        .attr("class", "cells")
-        .selectAll(".cell")
-        .data(data)
-        .enter().append("rect")
-          .attr("class", this.klass())
-          .attr("x", function(d) { return d.__row * cellSize; })
-          .attr("y", function(d) { return d.__column * cellSize; })
-          .attr("width", cellSize)
-          .attr("height", cellSize)
-          .attr("fill", this.fill())
-          .attr('stroke', 'white')
-          .attr('stroke-width', 1)
-          .attr('opacity', 1)
-          .on('click', this.click());
-    };
-
+    parent.constructor.call(this, plot, 'svg:rect', defaults);
   };
 
-  var generateLabel = function(plot, options) {
+  this.idiFill = function() {
+    var isoInterp = d3.interpolateRgb("#B10026", "#E31A1C"),
+    nearInterp = d3.interpolateRgb("#FC4E2A", "#FD8D3C");
 
-    generateComponent.call(this, plot, {}, options);
-
-    this.x = function() { return function() { return 0; }; };
-    this.y = function() { return function() { return -2; }; };
-
-    this.render = function(labels) {
-      return this.vis
-        .append('g')
-        .selectAll('.' + this.klass())
-        .data(labels)
-        .enter().append('text')
-          .attr('class', this.klass())
-          .text(String)
-          .attr('x', this.x())
-          .attr('y', this.y());
+    return function(d) {
+      if (d.idi <= 2) {
+        return isoInterp(d.idi);
+      }
+      if (d.idi <= 3.3) {
+        return nearInterp(d.idi);
+      }
+      if (d.idi <= 5) {
+        return '#4292c6';
+      }
+      return '#084594';
     };
-
-    return this;
   };
 
-  var generateMark = function(plot, type, options) {
+  this.preprocess = function(pairs) {
+    var ordered = [],
+    rowIndex = 0,
+    colIndex = 0,
+    getFirst = this.getFirstItem();
+
+    pairs.forEach(function(data, globalIndex) {
+      if (ordered.length > 0 &&
+          getFirst(data) !== getFirst(ordered[ordered.length - 1])) {
+        rowIndex = 0;
+      colIndex += 1;
+      }
+      var computed = {
+        __current: globalIndex,
+        __row: rowIndex,
+        __column: colIndex
+      };
+      ordered.push(extend(computed, data));
+      rowIndex += 1;
+    });
+    this.ordered(ordered);
+    return ordered;
+  };
+
+  this.render = function(selection) {
+    var cellSize = this.cellSize();
+
+    selection
+      .attr("x", function(d) { return d.__row * cellSize; })
+      .attr("y", function(d) { return d.__column * cellSize; })
+      .attr("width", cellSize)
+      .attr("height", cellSize)
+      .attr("fill", this.fill())
+      .attr('stroke', 'white')
+      .attr('stroke-width', 1)
+      .attr('opacity', 1);
+  };
+});
+
+var Legend = augment(Component, function(parent) {
+  'use strict';
+
+  this.constructor = function(plot) {
+    var defaults = {
+      fill: plot.cells.fill(),
+      klass: 'legend-cell',
+      size: 10,
+      groupClass: 'legend',
+      gap: 20,
+      getText: function(d) { return d.label; },
+    };
+
+    this.data = accessor([]);
+    this.labels = new LegendLabel(plot, this);
+
+    parent.constructor.call(this, plot, 'svg:rect', defaults);
+  };
+
+  this.draw = function() {
+    parent.draw.apply(this, arguments);
+    this.labels.draw();
+  };
+
+  this.x = function() {
+    var plotSize = this.cellSize() * this.columns().length,
+        width =  plotSize / this.data().length;
+    return function(_, i) { return width * i; };
+  };
+
+  this.y = function() {
+    return this.cellSize() * this.columns().length + this.gap();
+  };
+
+  this.render = function(selection, data) {
+    var size = this.size(),
+        plotSize = this.cellSize() * this.columns().length,
+        width =  plotSize / data.length;
+
+    selection
+      .attr('x', this.x())
+      .attr('y', this.y())
+      .attr('width', width)
+      .attr('height', size)
+      .attr('stroke-width', 0)
+      .attr('fill', this.fill());
+  };
+});
+
+var Mark = augment(Component, function (parent) {
+  'use strict';
+
+  this.constructor = function(plot, name) {
     var defaults = {
       klass: 'mark',
       onlyDiagonal: true,
-      areaPercent: 0.6,
-      rotation: false
+      fraction: 0.4,
+      rotation: false,
+      type: 'circle',
+      groupClass: name + '-marks'
     };
 
-    this._type = type;
+    this.data = accessor([]);
 
-    generateComponent.call(this, plot, defaults, options);
+    parent.constructor.call(this, plot, 'path', defaults);
+  };
 
-    this.size = function() {
-      return Math.pow(this.cellSize(), 2) / this.areaPercent;
-    };
+  this.size = function() {
+    return this.fraction() * Math.pow(this.cellSize(), 2);
+  };
 
-    this.preprocess = function(sequences) {
-      var map = {},
-          getID = this._plot.pairs.getID(),
-          getItems = this._plot.pairs.getItems(),
-          onlyDiagonal = this.onlyDiagonal();
+  this.preprocess = function() {
+    var map = {},
+        getID = this.getID(),
+        getItems = this.getItems(),
+        onlyDiagonal = this.onlyDiagonal();
 
-      sequences.forEach(function(s) { map[s] = true; });
+    this.data().forEach(function(s) { map[s] = true; });
 
-      return this._plot.ordered().filter(function(data) {
-        var id = getID(data),
-            items = getItems(data);
+    return this.ordered().filter(function(data) {
+      var id = getID(data),
+      items = getItems(data);
 
-        return (!onlyDiagonal && map[id]) ||
-               (onlyDiagonal && data.__row === data.__column && map[items[0]]);
-      });
-    };
+      return (!onlyDiagonal && map[id]) ||
+        (onlyDiagonal && data.__row === data.__column && map[items[0]]);
+    });
+  };
 
-    this.translate = function() {
-      var cellSize = this.cellSize(),
-          close = '';
+  this.translate = function() {
+    var cellSize = this.cellSize(),
+    close = '';
 
-      if (this.rotation()) {
-        close = 'rotate(' + this.rotation() + ')';
-      }
+    if (this.rotation()) {
+      close = 'rotate(' + this.rotation() + ')';
+    }
 
-      return function(d) {
-        var x = d.__row * cellSize,
-            y = d.__column * cellSize;
-        return 'translate(' + x + ',' + y + ')' + close;
-      };
-    };
-
-    this.render = function(marks) {
-
-      var generator = d3.symbol()
-        .type(this._type)
-        .size(this.size());
-
-      this.plot._vis.selectAll('#diagonal-marks').remove();
-
-      return this._plot.vis
-        .append('g')
-        .selectAll(".diagonal-mark")
-        .data(marks)
-        .enter().append('circle')
-          .attr('class', this.klass())
-          .attr('d', generator)
-          .attr('transform', this.translate())
-          .attr('pointer-events', 'none');
+    return function(d) {
+      var x = d.__row * cellSize + cellSize/2,
+      y = d.__column * cellSize + cellSize/2;
+      return 'translate(' + x + ',' + y + ')' + close;
     };
   };
 
-  var generateLegend = function(plot, options) {
-    var defaults = {
-      height: 10,
-      fill: plot.pairs.idiFill()
-    };
+  this.render = function(selection) {
 
-    generateComponent.call(this, plot, defaults, options);
-    this.labels = generateLegendLabel.call({}, this, plot, options.labels || {});
+    var generator = d3.svg.symbol()
+      .type(this.type())
+      .size(this.size());
 
-    this.render = function(data) {
-      var y = this.cellSize() * this.labels().length + 20,
-          size = this.size(),
-          width = size / this.legend().length,
-          legend = this.vis
-            .selectAll('legend')
-            .append('g')
-              .attr('id', 'legend');
+    selection
+      .attr('d', generator)
+      .attr('transform', this.translate())
+      .attr('pointer-events', 'none');
+  };
+});
 
-      legend.append('g')
-        .attr('id', 'legend-cells')
-        .data(data)
-        .enter().append('rect')
-          .attr('class', this.klass())
-          .attr('x', function(_, i) { return width * i; })
-          .attr('y', y)
-          .attr('width', width)
-          .attr('height', this.legendSize())
-          .attr('stroke-width', this.strok)
-          .attr('fill', this.fill());
+var MarkSet = augment(Object, function() {
+  'use strict';
 
-      this._vis = legend;
-      this.labels.render(data);
-
-      return legend;
-    };
+  this.constructor = function(plot) {
+    this._plot = plot;
+    this._marks = [];
   };
 
-  var generateLegendLabel = function(legend, plot, options) {
-    var defaults = {
-      klass: 'legend-label',
-      tickCount: 10
-    };
-
-    generateLabel.call(this, plot, defaults, options);
-
-    this._legend = legend;
-    this.size = function() { return this._legend.size(); };
-
-    this.render = function(values) {
-      var legend = this._legend.vis,
-          size = this.size(),
-          scale = d3.scale.linear().domain(values),
-          labelData = scale.ticks(this.tickCount()),
-          tickCount = labelData.length;
-
-      return legend.append('g')
-        .data(labelData)
-        .enter().append('text')
-          .attr('class', this.klass())
-          .attr('x', function(_, i) { return (size / tickCount) * i; })
-          .attr('y', this.y()) // y - this._legend.size() + 8)
-          .attr('text-anchor', 'middle')
-          .text(String);
-    };
+  this.add = function(name) {
+    if (!this._plot[name]) {
+      this._plot[name] = new Mark(this._plot, name);
+      this._marks.push(name);
+    }
+    return this._plot[name];
   };
 
-  function HeatMap(config) {
+  this.draw = function() {
+    var self = this;
+    this._marks.forEach(function(name) {
+      self._plot[name].draw();
+    });
+  };
+});
+
+var LabelSet = augment(Object, function() {
+  'use strict';
+
+  this.constructor = function(plot) {
+    this._plot = plot;
+    this.row = new RowLabel(plot);
+    this.column = new ColumnLabel(plot);
+  };
+
+  this.draw = function() {
+    this.row.draw();
+    this.column.draw();
+    return this;
+  };
+});
+
+var HeatMap = augment(Object, function() {
+  'use strict';
+
+  this.constructor = function(config) {
     var self = this,
       defaults = {
         margin: 30,
         size:  550,
         selection: null,
-        ordered: [],
-        known: {},
         addDefinitions: Object,
-        legend: null,
+        getFirstItem: function(d) { return d.items[0]; },
+        getSecondItem: function(d) { return d.items[1]; },
+        getItems: function(d) { return d.items; },
+        getID: function(d) { return d.id; },
       };
 
-    this.marks = {};
-    this.marks.draw = function() {
-      Object.keys(self.marks).forEach(function(name) {
-        self.marks[name].draw();
-      });
-    };
+    this.ordered = accessor([]);
+    this.known = accessor([]);
 
-    this.pairs = accessor([], function(_, pairs) {
+    this.data = accessor([], function(_, pairs) {
       self.known(self.computeKnown(pairs));
     });
 
     var conf = extend({}, defaults, config);
     Object.keys(defaults).forEach(function(k) { self[k] = accessor(conf[k]); });
 
-    generateCell.call(this.pairs, this, config.pairs || {});
+    this.cells = new Cell(this);
+    this.marks = new MarkSet(this);
+    this.legend = new Legend(this);
+    this.labels = new LabelSet(this);
 
-    this.addMark('active', 'circle')
+    this.marks.add('active')
+      .type('circle')
       .attr('fill', 'black')
       .attr('opacity', 1);
 
-    this.addMark('missing', 'cross')
+    this.marks.add('missing')
+      .type('cross')
       .rotation(45)
       .attr('fill', 'red')
       .attr('opacity', 0.7);
-
-    generateLegend.call(this.legend, this, config.legend || {});
-
-    // TODO: X labels
-    // TODO: Y labels
-  }
-
-  HeatMap.prototype.addMark = function(name, type, config) {
-    this.marks[name] = accessor([]);
-    generateMark.call(this.marks[name], this, type, config || {});
-    return this.marks[name];
   };
 
-  HeatMap.prototype.computeKnown = function(pairs) {
+  this.computeKnown = function(pairs) {
     var known = {},
-        getItems = this.pairs.getItems();
+        getItems = this.getItems();
     pairs.forEach(function(pair) {
       var items = getItems(pair);
       items.forEach(function(item) {
@@ -382,41 +524,25 @@
     return known;
   };
 
-  HeatMap.prototype.cellSize = function(count) {
+  this.cellSize = function(count) {
     if (arguments.length === 0) {
-      return this.size() / this.labels().length;
+      return this.size() / this.rows().length;
     }
     return (this.size() / count);
   };
 
-  HeatMap.prototype.labels = function() {
-    var seen = {},
-        names = [],
-        getFirst = this.pairs.getFirstItem();
-
-    this.pairs().forEach(function(d) {
-      var first = getFirst(d);
-      if (!seen.hasOwnProperty(first)) {
-        names.push(first);
-        seen[first] = true;
-      }
-    });
-    return names;
-  };
-
-  HeatMap.prototype.draw = function() {
+  this.draw = function() {
     var margin = this.margin(),
         selection = d3.select(this.selection());
 
     selection.select('svg').remove();
 
-    var self = this,
-        top = selection.append('svg'),
+    var top = selection.append('svg'),
         defs = top.append('svg:defs'),
         defFn = this.addDefinitions();
 
     top.attr('width', this.size() + margin * 2)
-      .attr('height', this.size() + margin * 2);
+       .attr('height', this.size() + margin * 2);
 
     defFn.call(this, defs);
 
@@ -424,25 +550,21 @@
       .attr("transform",
           "translate(" + margin + "," + margin + ")");
 
-    // this.labels.draw(this.labels());
-    this.pairs.draw(this.pairs());
-    // self.marks.draw();
-
-    if (this.legend()) {
-      this.legend.draw(this.legend());
-    }
+    this.labels.draw();
+    this.cells.draw(this.data());
+    this.marks.draw();
+    this.legend.draw();
 
     return this;
   };
 
-  HeatMap.prototype.getPairsInRange = function(d, i) {
+  this.getPairsInRange = function(d, i) {
 
     if (d.__row === d.__column) {
       return [d];
     }
 
-    var getItems = this.getItems(),
-        items = getItems(d, i),
+    var items = this.getItems()(d, i),
         getFirst = this.getFirstItem(),
         diagonal = this.ordered()
           .filter(function(d) { return d.__row === d.__column; }),
@@ -458,172 +580,25 @@
             diagonal[firsts.indexOf(items[0])]];
   };
 
+  function uniqueFromPair(obj, data, index) {
+    var getItems = obj.getItems(),
+        seen = {},
+        unique = [];
+
+    data.forEach(function(datum) {
+      var current = getItems(datum)[index];
+      if (!seen[current]) {
+        unique.push(current);
+        seen[current] = true;
+      }
+    });
+    return unique;
+  }
+
+  this.columns = function() { return uniqueFromPair(this, this.data(), 0); };
+
+  this.rows = function() { return uniqueFromPair(this, this.data(), 1); };
+});
+
   window.HeatMap = window.HeatMap || HeatMap;
 }());
-
-  // HeatMap.prototype.show = function(sequences) {
-  //   var map = {},
-  //       getID = this.getID(),
-  //       getItems = this.getItems(),
-  //       onlyDiagonal = this.showOnlyDiagonal();
-  //   sequences.forEach(function(s) { map[s] = true; });
-  //   var pairs = $.map(this.ordered(), function(data) {
-  //     var id = getID(data),
-  //         items = getItems(data);
-  //     if ((!onlyDiagonal && map[id]) ||
-  //         (onlyDiagonal && data.__row === data.__column && map[items[0]])) {
-  //       return data;
-  //     }
-  //     return null;
-  //   });
-  //   this.mark(pairs);
-  // };
-
-
-  // TODO: Implement me
-  // HorizontalLabel.prototype.y = function() { };
-
-  // // TODO: Implement me
-  // VerticalLabel.prototype.y = function() { };
-
-
-
-
-
-
-
-
-
-
-
-  // HeatMap.prototype.drawLabels = function() {
-  //   var cellSize = this.cellSize(),
-  //       labels = this.labels();
-  //   // Row Labels
-  //   this.vis
-  //     .append('g')
-  //     .selectAll('.row-labels')
-  //     .data(labels)
-  //     .enter().append('text')
-  //       .attr('id', function(_, i) { return 'row-label-' + i; })
-  //       .attr('class', function() { return 'row-labels'; })
-  //       .text(String)
-  //       .attr('x', 0)
-  //       .attr('y', function(d, i) { return i * cellSize; })
-  //       .style("text-anchor", "end")
-  //       .attr("transform", "translate(-6," + cellSize / 1.5 + ")");
-  // // Column Labels
-  // var translate = '';
-  // if (this.rotateColumns()) {
-  //   translate = function(d, i) {
-  //     var x = i * cellSize + (cellSize/2);
-  //     return "rotate(-90 " + x + ",-2)";
-  //   };
-  // }
-  // this.vis
-  //   .append("g")
-  //     .selectAll(".col-labels")
-  //     .data(labels)
-  //     .enter().append("text")
-  //       .attr('id', function(_, i) { return 'col-label-' + i; })
-  //       .attr('class', function() { return 'col-labels'; })
-  //       .text(String)
-  //       .attr("x", function (d, i) { return i * cellSize + (cellSize/2); })
-  //       .attr("y", -2)
-  //       .style("text-anchor", "left")
-  //       .attr("transform", translate);
-  // };
-  // HeatMap.prototype.drawCells = function() {
-  //   var cellSize = this.cellSize(),
-  //       ordered = [],
-  //       rowIndex = 0,
-  //       colIndex = 0,
-  //       getFirst = this.getFirstItem();
-  //   this.pairs().forEach(function(data, globalIndex) {
-  //     if (ordered.length > 0 &&
-  //         getFirst(data) !== getFirst(ordered[ordered.length - 1])) {
-  //       rowIndex = 0;
-  //       colIndex += 1;
-  //     }
-  //     var computed = {
-  //       __current: globalIndex,
-  //       __row: rowIndex,
-  //       __column: colIndex
-  //     };
-  //     ordered.push(extend(computed, data));
-  //     rowIndex += 1;
-  //   });
-  //   this.ordered(ordered);
-  //   // Draw the boxes
-  //   var self = this;
-  //   this.vis
-  //     .append("g")
-  //     .attr("class", "cells")
-  //     .selectAll(".cell")
-  //     .data(ordered)
-  //     .enter().append("rect")
-  //       .attr('id', function(_, i) { return 'cell-' + i; })
-  //       .attr("class", function(d) {
-  //         var klasses = ["cell"];
-  //         if (d.__row === d.__column) {
-  //           klasses.push("diagonal");
-  //         }
-  //         return klasses.join(' ');
-  //       })
-  //       .attr("x", function(d) { return d.__row * cellSize; })
-  //       .attr("y", function(d) { return d.__column * cellSize; })
-  //       .attr("width", cellSize)
-  //       .attr("height", cellSize)
-  //       .attr("fill", this.fill())
-  //       .attr('stroke', 'white')
-  //       .attr('stroke-width', 1)
-  //       .attr('opacity', this.opacity())
-  //       .on('click', self.click());
-  // };
-
-  // HeatMap.prototype.drawLegend = function() {
-  //   var y = this.cellSize() * this.labels().length + 20,
-  //       size = this.size(),
-  //       width = size / this.legend().length,
-  //       legend = this.vis
-  //         .selectAll('legend')
-  //         .append('g')
-  //           .attr('id', 'legend');
-
-  //   legend.append('g')
-  //     .attr('id', 'legend-cells')
-  //     .data(this.legend())
-  //     .enter().append('rect')
-  //       .attr('id', function(_, i) { return 'legend-' + i; })
-  //       .attr('class', 'legend-cell')
-  //       .attr('x', function(_, i) { return width * i; })
-  //       .attr('y', y)
-  //       .attr('width', width)
-  //       .attr('height', this.legendSize())
-  //       .attr('stroke-width', 0)
-  //       .attr('fill', this.fill());
-
-  //   var tickCount = 10,
-  //       values = this.legend().map(function(d) { return d.value; }),
-  //       scale = d3.scale.linear().domain(values),
-  //       labelData = scale.ticks(tickCount);
-
-  //   tickCount = labelData.length;
-
-  //   legend.append('g')
-  //     .attr('id', 'legend-text')
-  //     .data(labelData)
-  //     .enter().append('text')
-  //       .attr('x', function(_, i) { return (size / tickCount) * i; })
-  //       .attr('y', y - this.legendSize() + 8)
-  //       .attr('text-anchor', 'middle')
-  //       .text(String);
-
-  //   $(".legend-cell").tipsy({
-  //     gravity: 'se',
-  //     html: 'true',
-  //     title: function() {
-  //       return this.__data__.label;
-  //     }
-  //   });
-  // };
