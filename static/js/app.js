@@ -12,7 +12,7 @@ $(document).ready(function() {
       heatMapTemplate = null,
       summaryTemplate = null,
       heatMap = new HeatMap({size: 300, selection: '#heat-map'}),
-      summary = new HeatMap({size: 300, selection: '#summary-table'});
+      summary = new HeatMap({size: 550, selection: '#summary-table'});
 
   summary.labels.column.rotate(false);
 
