@@ -11,13 +11,10 @@ $(document).ready(function() {
       exemplarUrlTemplate = Handlebars.compile(rawUrl),
       heatMapTemplate = null,
       summaryTemplate = null,
-      heatMap = new HeatMap({ size: 300, selection: '#heat-map' }),
-      summary = new HeatMap({
-        size: 300,
-        selection: '#summary-table',
-        rotateColumns: false,
-        showOnlyDiagonal: false
-      });
+      heatMap = new HeatMap({size: 300, selection: '#heat-map'}),
+      summary = new HeatMap({size: 300, selection: '#summary-table'});
+
+  summary.labels.column.rotate(false);
 
   $.get('static/templates/heat-map-template.hbs', function(string) {
     heatMapTemplate = Handlebars.compile(string);
@@ -27,9 +24,9 @@ $(document).ready(function() {
     summaryTemplate = Handlebars.compile(string);
   });
 
-  heatMap.pairs.fill(function(d) {
-    var getFirst = heatMap.pairs.getFirstItem(),
-        scale = heatMap.pairs.idiFill();
+  heatMap.cells.fill(function(d) {
+    var getFirst = heatMap.cells.getFirstItem(),
+        scale = heatMap.cells.idiFill();
     if (d.__row !== d.__column) {
       return scale(d);
     }
@@ -39,7 +36,11 @@ $(document).ready(function() {
     return missingGrey;
   });
 
-  // summary.marks.attr('opacity', 0.5);
+  summary.active
+    .onlyDiagonal(false)
+    .attr('fill-opacity', 0)
+    .attr('stroke', 'black')
+    .attr('stroke-width', 2);
 
   function generateLegend(range, func) {
     var last = range[1] - range[2];
@@ -48,20 +49,25 @@ $(document).ready(function() {
     });
   }
 
-  function showSelected(data, clear) {
+  function showSelected(data) {
 
     // Exclude things where we do not have 3D coordinates
     var known = data.filter(function(d) { return d.coordinates_exist; });
 
     // Do nothing if we have selected something that has no 3D
-    if (known.length === 0 && !clear) { return; }
+    if (known.length === 0) { return; }
 
-    // heatMap.show(known.map(function(e) { return e.sequence; }));
-    // summary.show(known.map(function(e) { return e.id.toUpperCase(); }));
+    heatMap.active
+      .data(known.map(function(e) { return e.sequence; }))
+      .draw();
 
-    jsMolTools.showOnly(known.map(function(e) {
-      return { id: e.id, unit_ids: e.units.join(',') };
-    }));
+    summary.active
+      .data(known.map(function(e) { return e.id.toUpperCase(); }))
+      .draw();
+
+    // jsMolTools.showOnly(known.map(function(e) {
+    //   return { id: e.id, unit_ids: e.units.join(',') };
+    // }));
 
     $('.jmol-toggle').removeClass('success');
     data.forEach(function(datum) {
@@ -145,9 +151,9 @@ $(document).ready(function() {
       legend.reverse();
     }
 
-    summary.legend(legend);
+    summary.legend.data(legend);
 
-    summary.pairs
+    summary.cells
       .fill(function(d) {
         if (!d.exists || d[attr] === null) {
           return missingGrey;
@@ -160,9 +166,9 @@ $(document).ready(function() {
     var name = $("#coloring-selector").val();
 
     if (name === 'exemplar') {
-      summary.legend(null);
-      summary.pairs.attr('fill', function(d) {
-        return (d.exists ? 'url(#' + d.name + ')' : missingGrey);
+      summary.legend.data(null);
+      summary.cells.fill(function(d) {
+        return (d.exists ? 'url(#' + d.name + ')' : 'white');
       });
 
     } else if (name === 'count') {
@@ -173,10 +179,12 @@ $(document).ready(function() {
       summarizeRange([4, 0], -0.01, 'resolution', 'Resolution: ');
     }
 
-    summary.draw();
+    var missing = summary.data().filter(function(d) {
+      return !d.exists;
+    }).map(function(d) { return d.id.toUpperCase(); });
 
-    // var known = currentData.filter(function(d) { return d.coordinates_exist; });
-    // summary.show(known.map(function(e) { return e.id.toUpperCase(); }));
+    summary.missing.data(missing);
+    summary.draw();
 
     $("#summary-table .cell").tipsy({
       gravity: 's',
@@ -247,7 +255,7 @@ $(document).ready(function() {
 
     return function(svg) {
       var cellSize = this.cellSize();
-      $.each(defs, function(_, def) {
+      defs.forEach(function(def) {
         svg.append('svg:pattern')
           .attr('id', def.name)
           .attr('width', cellSize)
@@ -278,7 +286,7 @@ $(document).ready(function() {
 
     summarizeItems(items);
     summary.addDefinitions(defFn);
-    summary.pairs(data);
+    summary.data(data);
     updateSummary();
   }
 
@@ -294,7 +302,7 @@ $(document).ready(function() {
       itemData = data.items;
       updateTable(name, data);
       heatMap
-        .pairs(data.pairs)
+        .data(data.pairs)
         .draw();
 
       $("#heat-map .cell").tipsy({
@@ -312,20 +320,20 @@ $(document).ready(function() {
     });
   }
 
-  heatMap.pairs.click(function(d, i) {
+  heatMap.cells.click(function(d, i) {
     var pairs = heatMap.getPairsInRange(d, i);
     mapClick(pairs.map(function(d) { return d.items[0]; }));
   });
 
-  summary.pairs.click(function(d) {
+  summary.cells.click(function(d) {
     var known = heatMap.known();
     mapClick(known[d.sequence]);
   });
 
-  // heatMap.legend(generateLegend([0, 6, 0.1], function(idi, isLast) {
-  //   var label = 'IDI: ' + (isLast ? '>' + idi : idi);
-  //   return {value: idi, idi: idi, label: label};
-  // }));
+  heatMap.legend.data(generateLegend([0, 6, 0.1], function(idi, isLast) {
+    var label = 'IDI: ' + (isLast ? '>' + idi : idi);
+    return {value: idi, idi: idi, label: label};
+  }));
 
   $('.chosen-select').chosen();
   $('#family-selector').change(function() {
@@ -335,11 +343,11 @@ $(document).ready(function() {
     loadFamily(name);
   });
   $('#coloring-selector').change(updateSummary);
-  // $('#jt-numbers').jsMolTools.numberToggle();
 
   $('#jt-clear').on('click', function() {
     currentData = [];
-    showSelected(currentData, true);
+    heatMap.active.clear();
+    summary.active.clear();
     $('.jmol-toggle').removeClass('success');
   });
 
