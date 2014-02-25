@@ -11,6 +11,7 @@ $(document).ready(function() {
       exemplarUrlTemplate = Handlebars.compile(rawUrl),
       heatMapTemplate = null,
       summaryTemplate = null,
+      exemplarHoverTemplate = null,
       heatMap = new HeatMap({size: 300, selection: '#heat-map'}),
       summary = new HeatMap({size: 550, selection: '#summary-table'});
 
@@ -22,6 +23,10 @@ $(document).ready(function() {
 
   $.get('static/templates/exemplar-hover.hbs', function(string) {
     summaryTemplate = Handlebars.compile(string);
+  });
+
+  $.get('static/templates/exemplar-legend-hover.hbs', function(string) {
+    exemplarHoverTemplate = Handlebars.compile(string);
   });
 
   heatMap.cells.fill(function(d) {
@@ -202,6 +207,12 @@ $(document).ready(function() {
     summary.missing.data(missing);
     summary.draw();
 
+    $("#summary-table .legend-cell").tipsy({
+      gravity: 's',
+      html: true,
+      title: function() { return exemplarHoverTemplate(this.__data__); }
+    });
+
     $("#summary-table .cell").tipsy({
       gravity: 's',
       html: true,
@@ -327,6 +338,17 @@ $(document).ready(function() {
         title: function() {
           var data = $.extend({}, this.__data__);
           data.sequence = data.items.join(' ');
+          data.idi = data.idi.toFixed(2);
+          return heatMapTemplate(data);
+        }
+      });
+
+      $("#heat-map .legend-cell").tipsy({
+        gravity: 's',
+        html: true,
+        title: function() {
+          var data = $.extend({}, this.__data__);
+          data.sequence = '';
           data.idi = data.idi.toFixed(2);
           return heatMapTemplate(data);
         }
