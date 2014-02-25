@@ -11,22 +11,20 @@
         <th>Count</th>
         <th>PDB</th>
         <th>Resolution</th>
-        <th>Nucleotide 1</th>
-        <th>Nucleotide 2</th>
+        <th>Nucleotides</th>
       </tr>
     </thead>
 
     <tbody>
       {{#each nts}}
-      <tr id='row-{{sequence}}' class='jmol-toggle {{class}}'
+      <tr id='row-{{sequence}}' class='jmol-toggle'
         data-unit-ids='{{nt1}},{{nt2}}' data-sequence='{{sequence}}'>
-        <td>{{sequence}}</td>
+        <td><i class="fa {{icon}}"></i>&nbsp;{{sequence}}</td>
         <td>{{group}}</td>
         <td>{{count}}</td>
         <td>{{pdb}}</td>
         <td>{{resolution}}</td>
-        <td>{{nt1}}</td>
-        <td>{{nt2}}</td>
+        <td>{{nt1}}, {{nt2}}</td>
       </tr>
       {{/each}}
     </tbody>

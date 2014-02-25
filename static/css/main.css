@@ -1,3 +1,11 @@
 .chosen-select {
   width: 100%;
 }
+
+.fa-exclamation-triangle {
+  color: #fd8d3c;
+}
+
+.fa-check {
+  color: #2ca25f;
+}
