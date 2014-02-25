@@ -87,6 +87,7 @@ var Label = augment(Component, function(parent) {
       klass: type + '-label',
       rotate: true,
       'text-anchor': 'end',
+      getText: String,
     };
 
     parent.constructor.call(this, plot, 'svg:text', extend(defaults, opts));
@@ -110,7 +111,7 @@ var Label = augment(Component, function(parent) {
 
   this.render = function(selection) {
     selection
-      .text(String)
+      .text(this.getText())
       .attr('x', this.x())
       .attr('y', this.y())
       .attr('text-anchor', this['text-anchor']())
@@ -159,17 +160,42 @@ var LegendLabel = augment(Label, function(parent) {
     var defaults = {
       rotate: false,
       'text-anchor': 'middle',
+      'gap': 2,
     };
+
     this._legend = legend;
+    this.ticks = dispatch(this._legend, 'ticks');
+
     parent.constructor.call(this, plot, 'legend', defaults);
+
+    this.getText = dispatch(this._legend, 'getText');
+    this.getValue = dispatch(this._legend, 'getValue');
   };
 
-  this.x = function() { return this._legend.x(); };
-  this.y = function() { return this._legend.y() - this._legend.size(); };
+  this.x = function() {
+    var fn = this._legend.x();
+    return function(d) { return fn(d, d.__index); };
+  };
+
+  this.y = function() {
+    return this._legend.y() - this.gap();
+  };
 
   this.preprocess = function() {
     var data = this._legend.data();
-    return (data ? data.map(this._legend.getText()) : data);
+    if (!data) {
+      return data;
+    }
+    var getValue = this.getValue(),
+        scale = d3.scale.linear().domain(data.map(getValue)),
+        ticks = scale.ticks(this.ticks());
+
+    return data.map(function(d, i) {
+      d.__index = i;
+      return d;
+    }).filter(function(d) {
+      return ticks.indexOf(getValue(d)) !== -1;
+    });
   };
 });
 
@@ -259,7 +285,9 @@ var Legend = augment(Component, function(parent) {
       size: 10,
       groupClass: 'legend',
       gap: 20,
-      getText: function(d) { return d.label; },
+      ticks: 10,
+      getText: function(d) { return d.value; },
+      getValue: function(d) { return d.value; },
     };
 
     this.data = accessor([]);
