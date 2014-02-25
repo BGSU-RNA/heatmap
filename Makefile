@@ -2,7 +2,7 @@ CSV=$(wildcard static/data/*.csv)
 JSON=$(patsubst %.csv,%.json,$(CSV))
 NAMES=$(notdir $(basename $(JSON)))
 HEAT_JS=static/js/heatmap.js
-SRC_JS=$(wildcard src/*.js)
+HEAT_SRC=$(wildcard src/heatmap/*.js)
 
 .PHONY: test
 
@@ -15,8 +15,10 @@ static/data/%.json: bin/csv2json static/data/%.csv
 
 test:
 
-js: $(SRC_JS)
-	cat src/start.js > $(HEAT_JS)
-	grep -hv '/* globals' src/utils.js >> $(HEAT_JS)
+js: $(HEAT_JS)
+	
+$(HEAT_JS): $(HEAT_SRC)
+	cat src/heatmap/start.js > $(HEAT_JS)
+	grep -hv '/* globals' src/heatmap/utils.js >> $(HEAT_JS)
 	find src -name '*.js' -not -name 'start.js' -not -name 'stop.js' -not -name 'utils.js' | xargs grep -hv '/* globals' >> $(HEAT_JS)
-	cat src/stop.js >> $(HEAT_JS)
+	cat src/heatmap/stop.js >> $(HEAT_JS)

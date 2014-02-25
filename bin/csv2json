@@ -59,8 +59,10 @@ def generate_data(header, rows):
         }
         for key in names:
             if re.match('^[ACGUacgu]{2}$', key):
+                exists = (key != first) or known
                 data['pairs'].append({
                     'id': '%s-%s-%s' % (family, first, key),
+                    'exists': exists,
                     'idi': float(row[key]),
                     'items': [first, key]
                 })
