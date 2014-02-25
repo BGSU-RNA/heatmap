@@ -135,6 +135,7 @@ $(document).ready(function() {
             nt1: data.units[0],
             nt2: data.units[1],
             count: data.count,
+            'class': (!data.coordinates_exist ? 'no-hover' : ''),
             'icon': 'fa-' + (data.coordinates_exist ? 'check' : 'exclamation-triangle')
           };
         }),

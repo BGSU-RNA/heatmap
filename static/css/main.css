@@ -9,3 +9,7 @@
 .fa-check {
   color: #2ca25f;
 }
+
+tbody tr.no-hover:hover td { 
+  background: none;
+} 
