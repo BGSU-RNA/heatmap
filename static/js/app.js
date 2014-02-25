@@ -65,9 +65,9 @@ $(document).ready(function() {
       .data(known.map(function(e) { return e.id.toUpperCase(); }))
       .draw();
 
-    // jsMolTools.showOnly(known.map(function(e) {
-    //   return { id: e.id, unit_ids: e.units.join(',') };
-    // }));
+    jsMolTools.showOnly(known.map(function(e) {
+      return { id: e.id, unit_ids: e.units.join(',') };
+    }));
 
     $('.jmol-toggle').removeClass('success');
     data.forEach(function(datum) {
