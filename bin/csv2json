@@ -11,6 +11,7 @@ import itertools as it
 import requests
 
 URL = 'http://rna.bgsu.edu/rna3dhub/rest/getCoordinates'
+IMAGE_URL = 'static/img/{0}/{0}_{1}_exemplar.png'
 
 
 def generate_data(header, rows):
@@ -23,6 +24,8 @@ def generate_data(header, rows):
         family = row['Family']
         known = True
         units = [row['NT1ID'], row['NT2ID']]
+        id_of = lambda seq: '%s-%s' % (family, seq)
+        url = None
 
         pdb = row['PDBID']
         if row['Resolution'] == 'NaN':
@@ -41,12 +44,13 @@ def generate_data(header, rows):
         # The only way to do this in cases where we have a unit ids is to make
         # a request for that set of coordiantes and see if it worked.
         if known:
+            url = IMAGE_URL.format(family, first)
             response = requests.post(URL, data={'coord': ','.join(units)})
             if 'MODEL' not in response.text:
                 known = False
 
         data['items'][first] = {
-            'id': '%s-%s' % (family, first),
+            'id': id_of(first),
             'units': units,
             'pdb': pdb,
             'resolution': resolution,
@@ -55,16 +59,19 @@ def generate_data(header, rows):
             'distance': float(row['C1*-C1* distance']),
             'count': int(row['Count']),
             'sequence': first,
-            'coordinates_exist': known
+            'coordinates_exist': known,
+            'url': url
         }
+
+
         for key in names:
             if re.match('^[ACGUacgu]{2}$', key):
-                exists = (key != first) or known
                 data['pairs'].append({
                     'id': '%s-%s-%s' % (family, first, key),
-                    'exists': exists,
+                    'exists': (key != first) or known,
                     'idi': float(row[key]),
-                    'items': [first, key]
+                    'items': [first, key],
+                    'item_ids': [id_of(first), id_of(key)]
                 })
 
     return data
@@ -98,6 +105,31 @@ def load_data(raw, family):
     return generate_data(header, rows)
 
 
+def add_missing_items(data):
+    known = [key.upper() for key in data['items'].keys()]
+    item = data['items'][data['items'].keys()[0]]
+    pdb = item['pdb']
+    family = item['family']
+
+    nts = ['A', 'C', 'G', 'U']
+    possible = set([''.join(pair) for pair in zip(nts, nts)])
+    missing = possible - set(known)
+    for sequence in missing:
+        data['items'][sequence] = {
+            'id': '%s-%s' % (family, sequence),
+            'units': [],
+            'pdb': pdb,
+            'resolution': None,
+            'group': None,
+            'family': family,
+            'distance': None,
+            'count': 0,
+            'sequence': sequence,
+            'coordinates_exist': False,
+            'url': None
+        }
+
+
 def save(data):
     json.dump(data, sys.stdout)
    # json.dumps(data)
@@ -107,6 +139,7 @@ def main(filename):
     name = os.path.basename(filename)[0:3]
     with open(filename, 'rb') as raw:
         data = load_data(raw, name)
+    add_missing_items(data)
     save(data)
 
 if __name__ == '__main__':
