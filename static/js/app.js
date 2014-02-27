@@ -386,8 +386,9 @@ $(document).ready(function() {
   heatMap.missing
     .attr('fill', '#fd8d3c')
     .attr('opacity', 1)
-    .type('cross')
-    .rotation(45);
+    .type('triangle-up')
+    .fraction(0.3)
+    .rotation(false);
 
   heatMap.cells.click(function(d, i) {
     var pairs = heatMap.getPairsInRange(d, i);
