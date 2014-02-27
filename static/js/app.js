@@ -72,7 +72,9 @@ $(document).ready(function() {
     // Do nothing if we have selected something that has no 3D
     if (known.length === 0) { return; }
 
-    var patterns = known.map(function(d) { return new RegExp(d.sequence, "i"); }),
+    var patterns = known.map(function(d) {
+          return new RegExp(d.sequence, "i");
+        }),
         rowIds = [],
         cellIds = [];
 
@@ -204,7 +206,9 @@ $(document).ready(function() {
     summary.legend.data(legend);
 
     summary.cells
-      .fill(function(d) { return (d.exists ? scale(Math.min(d[attr], max)) : 'white'); });
+      .fill(function(d) {
+        return (d.exists ? scale(Math.min(d[attr], max)) : 'white');
+      });
 
     summary.legend
       .fill(function(d) { return scale(d.value); });
@@ -327,13 +331,14 @@ $(document).ready(function() {
   }
 
   function summarizeItems(items) {
-    summaryAttributeRanges = {count: [], resolution: []};
+    var ranges = {count: [], resolution: []};
     $.each(items, function(_, item) {
-      summaryAttributeRanges.count.push(item.count);
-      summaryAttributeRanges.resolution.push(item.resolution);
+      ranges.count.push(item.count);
+      ranges.resolution.push(item.resolution);
     });
-    summaryAttributeRanges.count = [0, d3.max(summaryAttributeRanges.count)];
-    summaryAttributeRanges.resolution = [0, d3.max(summaryAttributeRanges.resolution)];
+    ranges.count = [0, d3.max(ranges.count)];
+    ranges.resolution = [0, d3.max(ranges.resolution)];
+    return ranges;
   }
 
   function setUpSummary(family, items) {
@@ -341,7 +346,7 @@ $(document).ready(function() {
         data = aggregateItems(family, known, items),
         defFn = generateDefs(data);
 
-    summarizeItems(items);
+    summaryAttributeRanges = summarizeItems(items);
     summary.addDefinitions(defFn);
     summary.data(data);
     updateSummary();
