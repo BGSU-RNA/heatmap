@@ -6,7 +6,6 @@ $(document).ready(function() {
   var itemData = {},
       currentData = [],
       summaryAttributeRanges = {},
-      missingGrey = 'white',
       rawUrl = 'static/img/{{family}}/{{family}}_{{sequence}}_exemplar.png',
       exemplarUrlTemplate = Handlebars.compile(rawUrl),
       heatMapTemplate = null,
@@ -30,19 +29,25 @@ $(document).ready(function() {
   });
 
   heatMap.cells.fill(function(d) {
-    var getFirst = heatMap.cells.getFirstItem(),
-        scale = heatMap.cells.idiFill();
-    if (d.__row !== d.__column) {
-      return scale(d);
+    if (d.__row === d.__column) {
+      return 'black';
     }
-    if (d.label || itemData[getFirst(d)].coordinates_exist) {
-      return scale(d);
-    }
-    return missingGrey;
+    return heatMap.cells.idiFill()(d);
   });
 
+  // heatMap.cells.fill(function(d) {
+  //   var getFirst = heatMap.cells.getFirstItem(),
+  //       scale = heatMap.cells.idiFill();
+  //   if (d.__row !== d.__column) {
+  //     return scale(d);
+  //   }
+  //   if (d.label || itemData[getFirst(d)].coordinates_exist) {
+  //     return scale(d);
+  //   }
+  //   return missingGrey;
+  // });
+
   summary.active
-    .onlyDiagonal(false)
     .attr('fill-opacity', 0)
     .attr('stroke', 'black')
     .attr('stroke-width', 2);
@@ -62,8 +67,23 @@ $(document).ready(function() {
     // Do nothing if we have selected something that has no 3D
     if (known.length === 0) { return; }
 
+    var patterns = known.map(function(d) { return new RegExp(d.sequence, "i"); }), 
+        rowIds = [],
+        cellIds = [];
+
+    heatMap.ordered().forEach(function(data) {
+      patterns.forEach(function (pattern) {
+        if (pattern.test(data.items[0]) && pattern.test(data.items[1]) &&
+           data.__row === data.__column) {
+          cellIds.push(data.id);
+          rowIds.push(data.id.split('-').splice(0, 2).join('-'));
+        }
+      });
+    });
+
+
     heatMap.active
-      .data(known.map(function(e) { return e.sequence; }))
+      .data(cellIds)
       .draw();
 
     summary.active
@@ -75,9 +95,7 @@ $(document).ready(function() {
     }));
 
     $('.jmol-toggle').removeClass('success');
-    data.forEach(function(datum) {
-      $('#row-' + datum.sequence).addClass('success');
-    });
+    rowIds.forEach(function(id) { $('#' + id).addClass('success'); });
   }
 
   function clearDisplay() {
@@ -126,31 +144,31 @@ $(document).ready(function() {
   }
 
   function updateTable(name, raw) {
-    var nts = $.map(raw.items, function(data, sequence) {
-          return {
-            group: data.group,
-            sequence: sequence,
-            pdb: data.pdb,
-            resolution: data.resolution,
-            nt1: data.units[0],
-            nt2: data.units[1],
-            count: data.count,
-            'class': (!data.coordinates_exist ? 'no-hover' : ''),
-            'icon': 'fa-' + (data.coordinates_exist ? 'check' : 'exclamation-triangle')
-          };
-        }),
-        order = {};
+    var order = {},
+        nts = [];
+    
+    Object.keys(raw.items).forEach(function(key) {
+      var data = $.extend({}, raw.items[key]);
+      data['class'] = (!data.coordinates_exist ? 'no-hover' : '');
+      data.icon = 'fa-' + (data.coordinates_exist ? 'check' : 'warning');
+
+      nts.push(data);
+    });
+
+    nts = nts.filter(function(d) { return d.units.length; });
 
     $.each(raw.pairs, function(index, pair) {
       var key = pair.items[0];
       order[key] = order[key] || index;
     });
 
-    nts.sort(function(a, b) { return order[a.sequence] - order[b.sequence]; });
+    nts
+      .sort(function(a, b) { return order[a.sequence] - order[b.sequence]; }).
+      filter(function(d) { return raw.items[d.id]; });
 
     $("#table-container")
       .empty()
-      .handlebars("pairs-table", {family: name, nts: nts}, jmolWatch);
+      .handlebars("pairs-table", {items: nts}, jmolWatch);
   }
 
   function summarizeRange(domain, inc, attr, labelText) {
@@ -178,7 +196,7 @@ $(document).ready(function() {
     summary.cells
       .fill(function(d) {
         if (!d.exists || d[attr] === null) {
-          return missingGrey;
+          return 'white';
         }
         return scale(Math.min(d[attr], max));
       });
@@ -254,7 +272,7 @@ $(document).ready(function() {
               distance: false,
               resolution: false,
               exists: known.hasOwnProperty(sequence),
-              image: missingGrey
+              image: 'white'
             };
 
         if (entry.exists) {
@@ -329,6 +347,12 @@ $(document).ready(function() {
       }
       itemData = data.items;
       updateTable(name, data);
+
+      heatMap.missing
+        .data(data.pairs
+              .filter(function(d) { return !d.exists; })
+              .map(function(d) { return d.id; }));
+
       heatMap
         .data(data.pairs)
         .draw();
@@ -358,6 +382,12 @@ $(document).ready(function() {
       setUpSummary(name, data.items);
     });
   }
+
+  heatMap.missing
+    .attr('fill', '#fd8d3c')
+    .attr('opacity', 1)
+    .type('cross')
+    .rotation(45);
 
   heatMap.cells.click(function(d, i) {
     var pairs = heatMap.getPairsInRange(d, i);
