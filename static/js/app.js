@@ -412,7 +412,7 @@ $(document).ready(function() {
 
   heatMap.legend.data(generateLegend([0, 6, 0.1], function(idi, isLast) {
     var label = 'IDI: ' + (isLast ? '>' + idi : idi);
-    return {value: idi, idi: idi, label: label};
+    return {value: idi, idi: idi, label: label, exists: true};
   }));
 
   $('.chosen-select').chosen();
