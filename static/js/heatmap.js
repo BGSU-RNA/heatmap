@@ -391,7 +391,6 @@ var Mark = augment(Component, function (parent) {
   this.constructor = function(plot, name) {
     var defaults = {
       klass: 'mark',
-      onlyDiagonal: true,
       fraction: 0.4,
       rotation: false,
       type: 'circle',
@@ -409,19 +408,16 @@ var Mark = augment(Component, function (parent) {
 
   this.preprocess = function() {
     var map = {},
-        getID = this.getID(),
-        getItems = this.getItems(),
-        onlyDiagonal = this.onlyDiagonal();
+        data = this.data(),
+        getID = this.getID();
 
-    this.data().forEach(function(s) { map[s] = true; });
+    if (typeof data[0] !== 'string') {
+      return data;
+    }
 
-    return this.ordered().filter(function(data) {
-      var id = getID(data),
-      items = getItems(data);
+    data.forEach(function(s) { map[s] = true; });
 
-      return (!onlyDiagonal && map[id]) ||
-        (onlyDiagonal && data.__row === data.__column && map[items[0]]);
-    });
+    return this.ordered().filter(function(data) { return map[getID(data)]; });
   };
 
   this.translate = function() {
