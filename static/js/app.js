@@ -1,7 +1,7 @@
+/* jshint jquery: true, browser: true */
 $(document).ready(function() {
   'use strict';
-  /* jshint jquery: true, browser: true */
-  /* global document, HeatMap, d3, Handlebars, jsMolTools, console */
+  /* global HeatMap, d3, Handlebars, jsMolTools */
 
   var itemData = {},
       currentData = [],
@@ -72,7 +72,7 @@ $(document).ready(function() {
     // Do nothing if we have selected something that has no 3D
     if (known.length === 0) { return; }
 
-    var patterns = known.map(function(d) { return new RegExp(d.sequence, "i"); }), 
+    var patterns = known.map(function(d) { return new RegExp(d.sequence, "i"); }),
         rowIds = [],
         cellIds = [];
 
@@ -151,7 +151,7 @@ $(document).ready(function() {
   function updateTable(name, raw) {
     var order = {},
         nts = [];
-    
+
     Object.keys(raw.items).forEach(function(key) {
       var data = $.extend({}, raw.items[key]);
       data['class'] = (!data.coordinates_exist ? 'no-hover' : '');
@@ -181,8 +181,12 @@ $(document).ready(function() {
         max = d3.max(domain),
         scale = d3.scale.linear()
           .domain(domain)
+          // .range(["#67001f", "#b2182b", "#d6604d", "#f4a582", "#fddbc7",
+          //        "#f7f7f7", "#d1e5f0", "#92c5de", "#4393c3", "#2166ac",
+          //        "#053061"])
           .range(["#2166ac", "#b2182b"])
           .interpolate(d3.interpolateRgb);
+          // ;
 
     lengendRange.push(inc);
     var legend = generateLegend(lengendRange, function(value, isLast) {
@@ -199,12 +203,10 @@ $(document).ready(function() {
     summary.legend.data(legend);
 
     summary.cells
-      .fill(function(d) {
-        if (!d.exists || d[attr] === null) {
-          return 'white';
-        }
-        return scale(Math.min(d[attr], max));
-      });
+      .fill(function(d) { return (d.exists ? scale(Math.min(d[attr], max)) : 'white'); });
+
+    summary.legend
+      .fill(function(d) { return scale(d.value); });
   }
 
   function updateSummary() {
