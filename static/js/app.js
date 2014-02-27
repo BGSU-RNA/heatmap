@@ -89,6 +89,7 @@ $(document).ready(function() {
 
     heatMap.active
       .data(cellIds)
+      .attr('fill', '#31a354')
       .draw();
 
     summary.active
