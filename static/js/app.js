@@ -10,6 +10,7 @@ $(document).ready(function() {
       exemplarUrlTemplate = Handlebars.compile(rawUrl),
       heatMapTemplate = null,
       summaryTemplate = null,
+      missingTemplate = null,
       exemplarHoverTemplate = null,
       heatMap = new HeatMap({size: 300, selection: '#heat-map'}),
       summary = new HeatMap({size: 550, selection: '#summary-table'});
@@ -26,6 +27,10 @@ $(document).ready(function() {
 
   $.get('static/templates/exemplar-legend-hover.hbs', function(string) {
     exemplarHoverTemplate = Handlebars.compile(string);
+  });
+
+  $.get('static/templates/exemplar-missing-hover.hbs', function(string) {
+    missingTemplate = Handlebars.compile(string);
   });
 
   heatMap.cells.fill(function(d) {
@@ -246,7 +251,10 @@ $(document).ready(function() {
         var data = this.__data__,
             resolution = data.resolution || 'NA',
             context = $.extend({}, data, {resolution: resolution});
-        return summaryTemplate(context);
+        if (data.exists) {
+          return summaryTemplate(context);
+        }
+        return missingTemplate(context);
       }
     });
   }
