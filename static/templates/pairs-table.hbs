@@ -16,15 +16,14 @@
     </thead>
 
     <tbody>
-      {{#each nts}}
-      <tr id='row-{{sequence}}' class='jmol-toggle {{class}}'
-        data-unit-ids='{{nt1}},{{nt2}}' data-sequence='{{sequence}}'>
+      {{#each items}}
+      <tr id='{{id}}' class='jmol-toggle {{class}}' data-sequence='{{sequence}}'>
         <td><i class="fa {{icon}}"></i>&nbsp;{{sequence}}</td>
         <td>{{group}}</td>
         <td>{{count}}</td>
         <td>{{pdb}}</td>
         <td>{{resolution}}</td>
-        <td>{{nt1}}, {{nt2}}</td>
+        <td>{{units.[0]}}, {{units.[1]}}</td>
       </tr>
       {{/each}}
     </tbody>
