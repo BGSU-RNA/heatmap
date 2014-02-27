@@ -1,3 +1,15 @@
 .chosen-select {
   width: 100%;
 }
+
+.fa-warning {
+  color: #fd8d3c;
+}
+
+.fa-check {
+  color: #2ca25f;
+}
+
+tbody tr.no-hover:hover td { 
+  background: none;
+} 
