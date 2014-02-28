@@ -15,8 +15,6 @@ $(document).ready(function() {
       heatMap = new HeatMap({size: 300, selection: '#heat-map'}),
       summary = new HeatMap({size: 550, selection: '#summary-table'});
 
-  summary.labels.column.rotate(false);
-
   $.get('static/templates/heat-map-template.hbs', function(string) {
     heatMapTemplate = Handlebars.compile(string);
   });
@@ -33,24 +31,6 @@ $(document).ready(function() {
     missingTemplate = Handlebars.compile(string);
   });
 
-  heatMap.cells.fill(heatMap.cells.idiFill());
-
-  // heatMap.cells.fill(function(d) {
-  //   var getFirst = heatMap.cells.getFirstItem(),
-  //       scale = heatMap.cells.idiFill();
-  //   if (d.__row !== d.__column) {
-  //     return scale(d);
-  //   }
-  //   if (d.label || itemData[getFirst(d)].coordinates_exist) {
-  //     return scale(d);
-  //   }
-  //   return missingGrey;
-  // });
-
-  summary.active
-    .attr('fill-opacity', 0)
-    .attr('stroke', 'black')
-    .attr('stroke-width', 2);
 
   function generateLegend(range, func) {
     var last = range[1] - range[2];
@@ -86,7 +66,6 @@ $(document).ready(function() {
 
     heatMap.active
       .data(cellIds)
-      .attr('fill', '#31a354')
       .draw();
 
     summary.active
@@ -402,6 +381,9 @@ $(document).ready(function() {
     });
   }
 
+  heatMap.active
+    .attr('fill', '#31a354');
+
   heatMap.missing
     .attr('fill', '#fd8d3c')
     .attr('opacity', 1)
@@ -409,10 +391,23 @@ $(document).ready(function() {
     .fraction(0.3)
     .rotation(false);
 
-  heatMap.cells.click(function(d, i) {
-    var pairs = heatMap.getPairsInRange(d, i);
-    mapClick(pairs.map(function(d) { return d.items[0]; }));
-  });
+  summary.labels.column
+      .rotate(false);
+
+  summary.missing
+    .fraction(0.1);
+
+  summary.active
+    .attr('fill-opacity', 0)
+    .attr('stroke', 'black')
+    .attr('stroke-width', 2);
+
+  heatMap.cells
+    .click(function(d, i) {
+      var pairs = heatMap.getPairsInRange(d, i);
+      mapClick(pairs.map(function(d) { return d.items[0]; }));
+    })
+    .fill(heatMap.cells.idiFill());
 
   summary.cells.click(function(d) {
     var known = heatMap.known();
