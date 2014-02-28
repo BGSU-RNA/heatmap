@@ -278,8 +278,8 @@ var Cell = augment(Component, function (parent) {
   };
 
   this.idiFill = function() {
-    var isoInterp = d3.interpolateRgb("#B10026", "#E31A1C"),
-    nearInterp = d3.interpolateRgb("#FC4E2A", "#FD8D3C");
+    var isoInterp = d3.interpolateRgb('#084594', '#4292c6'),
+        nearInterp = d3.interpolateRgb("#FC4E2A", "#FD8D3C");
 
     return function(d) {
       if (d.idi <= 2) {
@@ -289,9 +289,9 @@ var Cell = augment(Component, function (parent) {
         return nearInterp(d.idi);
       }
       if (d.idi <= 5) {
-        return '#4292c6';
+        return "#FD8D3C";
       }
-      return '#084594';
+      return "#E31A1C";
     };
   };
 
