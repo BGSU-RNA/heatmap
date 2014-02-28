@@ -33,12 +33,7 @@ $(document).ready(function() {
     missingTemplate = Handlebars.compile(string);
   });
 
-  heatMap.cells.fill(function(d) {
-    if (d.__row === d.__column) {
-      return 'black';
-    }
-    return heatMap.cells.idiFill()(d);
-  });
+  heatMap.cells.fill(heatMap.cells.idiFill());
 
   // heatMap.cells.fill(function(d) {
   //   var getFirst = heatMap.cells.getFirstItem(),
