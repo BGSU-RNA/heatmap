@@ -202,14 +202,22 @@ $(document).ready(function() {
       summary.legend.data(null);
       summary.cells.fill(function(d) {
         return (d.exists ? 'url(#' + d.name + ')' : 'white');
-      });
+      })
+      .attr('stroke', 'black')
+      .attr('stroke-opacity', 0.2);
 
-    } else if (name === 'count') {
-      var countMax = d3.min([summaryAttributeRanges.count[1], 400]);
-      summarizeRange([0, countMax], 1, 'count', 'Count: ');
+    } else {
+      summary.cells
+        .attr('stroke-opacity', 1)
+        .attr('stroke', 'white');
 
-    } else if (name === 'resolution') {
-      summarizeRange([4, 0], -0.01, 'resolution', 'Resolution: ');
+      if (name === 'count') {
+        var countMax = d3.min([summaryAttributeRanges.count[1], 400]);
+        summarizeRange([0, countMax], 1, 'count', 'Count: ');
+
+      } else if (name === 'resolution') {
+        summarizeRange([4, 0], -0.01, 'resolution', 'Resolution: ');
+      }
     }
 
     var missing = summary.data().filter(function(d) {
