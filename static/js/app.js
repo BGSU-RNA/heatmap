@@ -63,7 +63,6 @@ $(document).ready(function() {
       });
     });
 
-
     heatMap.active
       .data(cellIds)
       .draw();
