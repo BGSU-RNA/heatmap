@@ -1,4 +1,4 @@
-/* jshint jquery: true, browser: true */
+/* jshint jquery: true, browser: true, devel: true */
 $(document).ready(function() {
   'use strict';
   /* global HeatMap, d3, Handlebars, jsMolTools */
@@ -159,6 +159,14 @@ $(document).ready(function() {
       var data = $.extend({}, raw.items[key]);
       data['class'] = (!data.coordinates_exist ? 'no-hover' : '');
       data.icon = 'fa-' + (data.coordinates_exist ? 'check' : 'warning');
+      data.resolution = data.resolution || 'NA';
+
+      var selector = data.units.join(', ');
+      if (!data.units.length ||
+          (data.units[0] === "" && data.units[1] === "")) {
+        selector = '';
+      }
+      data.nts = selector;
 
       nts.push(data);
     });
