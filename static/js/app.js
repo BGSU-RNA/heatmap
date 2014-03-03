@@ -117,6 +117,14 @@ $(document).ready(function() {
       var data = [itemData[$(this).data('sequence')]];
       handleClick(event, data);
     });
+
+    $(".no-hover .sequence-cell").tipsy({
+      gravity: 's',
+      html: true,
+      title: function() {
+        return '<p>No 3D structure aviable for this exemplar</p>';
+      }
+    });
   }
 
   function mapClick(pairs) {
