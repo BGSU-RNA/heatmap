@@ -407,7 +407,11 @@ $(document).ready(function() {
     .rotation(false);
 
   summary.labels.column
-      .rotate(false);
+    .attr('font-size', 20)
+    .rotate(false);
+
+  summary.labels.row
+    .attr('font-size', 20);
 
   summary.missing
     .fraction(0.1);
