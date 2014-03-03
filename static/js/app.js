@@ -434,7 +434,7 @@ $(document).ready(function() {
     return {value: idi, idi: idi, label: label, exists: true};
   }));
 
-  $('.chosen-select').chosen();
+  $('.chosen-select').chosen({search_contains: true});
   $('#family-selector').change(function() {
     var name = $(this).val();
     currentData = [];
