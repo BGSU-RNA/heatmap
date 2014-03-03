@@ -7,7 +7,7 @@
     <thead>
       <tr>
         <th>Sequence</th>
-        <th>IDI Group</th>
+        <th>Isostericty Group</th>
         <th>Count</th>
         <th>PDB</th>
         <th>Resolution</th>
@@ -18,12 +18,12 @@
     <tbody>
       {{#each items}}
       <tr id='{{id}}' class='jmol-toggle {{class}}' data-sequence='{{sequence}}'>
-        <td><i class="fa {{icon}}"></i>&nbsp;{{sequence}}</td>
+        <td class='sequence-cell'><i class="fa {{icon}}"></i>&nbsp;{{sequence}}</td>
         <td>{{group}}</td>
         <td>{{count}}</td>
         <td>{{pdb}}</td>
         <td>{{resolution}}</td>
-        <td>{{units.[0]}}, {{units.[1]}}</td>
+        <td>{{nts}}</td>
       </tr>
       {{/each}}
     </tbody>

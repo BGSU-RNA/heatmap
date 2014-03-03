@@ -197,18 +197,23 @@ var RowLabel = augment(Label, function(parent) {
   'use strict';
 
   this.constructor = function(plot) {
-    parent.constructor.call(this, plot, 'row', {rotate: false});
+    parent.constructor.call(this, plot, 'row', {rotate: false, 'text-anchor': 'end'});
 
     this.preprocess = dispatch(plot, 'rows');
   };
 
-  this.transform = function() {
-    return "translate(-6," + this.cellSize() / 1.5 + ")";
+  this.transform = function() { return ''; };
+
+  this.x = function() {
+    return function() { return -6; };
   };
 
   this.y = function() {
     var cellSize = this.cellSize();
-    return function(_, i) { return i * cellSize; };
+    return function(_, i) {
+      var bbox = this.getBBox();
+      return i * cellSize + (cellSize/2) + bbox.height/2;
+    };
   };
 });
 
@@ -278,8 +283,8 @@ var Cell = augment(Component, function (parent) {
   };
 
   this.idiFill = function() {
-    var isoInterp = d3.interpolateRgb("#B10026", "#E31A1C"),
-    nearInterp = d3.interpolateRgb("#FC4E2A", "#FD8D3C");
+    var isoInterp = d3.interpolateRgb('#084594', '#4292c6'),
+        nearInterp = d3.interpolateRgb("#FC4E2A", "#FD8D3C");
 
     return function(d) {
       if (d.idi <= 2) {
@@ -289,9 +294,9 @@ var Cell = augment(Component, function (parent) {
         return nearInterp(d.idi);
       }
       if (d.idi <= 5) {
-        return '#4292c6';
+        return "#FD8D3C";
       }
-      return '#084594';
+      return "#E31A1C";
     };
   };
 

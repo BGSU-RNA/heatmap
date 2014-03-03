@@ -1,4 +1,4 @@
-/* jshint jquery: true, browser: true */
+/* jshint jquery: true, browser: true, devel: true */
 $(document).ready(function() {
   'use strict';
   /* global HeatMap, d3, Handlebars, jsMolTools */
@@ -14,8 +14,6 @@ $(document).ready(function() {
       exemplarHoverTemplate = null,
       heatMap = new HeatMap({size: 300, selection: '#heat-map'}),
       summary = new HeatMap({size: 550, selection: '#summary-table'});
-
-  summary.labels.column.rotate(false);
 
   $.get('static/templates/heat-map-template.hbs', function(string) {
     heatMapTemplate = Handlebars.compile(string);
@@ -33,29 +31,6 @@ $(document).ready(function() {
     missingTemplate = Handlebars.compile(string);
   });
 
-  heatMap.cells.fill(function(d) {
-    if (d.__row === d.__column) {
-      return 'black';
-    }
-    return heatMap.cells.idiFill()(d);
-  });
-
-  // heatMap.cells.fill(function(d) {
-  //   var getFirst = heatMap.cells.getFirstItem(),
-  //       scale = heatMap.cells.idiFill();
-  //   if (d.__row !== d.__column) {
-  //     return scale(d);
-  //   }
-  //   if (d.label || itemData[getFirst(d)].coordinates_exist) {
-  //     return scale(d);
-  //   }
-  //   return missingGrey;
-  // });
-
-  summary.active
-    .attr('fill-opacity', 0)
-    .attr('stroke', 'black')
-    .attr('stroke-width', 2);
 
   function generateLegend(range, func) {
     var last = range[1] - range[2];
@@ -72,7 +47,9 @@ $(document).ready(function() {
     // Do nothing if we have selected something that has no 3D
     if (known.length === 0) { return; }
 
-    var patterns = known.map(function(d) { return new RegExp(d.sequence, "i"); }),
+    var patterns = known.map(function(d) {
+          return new RegExp(d.sequence, "i");
+        }),
         rowIds = [],
         cellIds = [];
 
@@ -86,10 +63,8 @@ $(document).ready(function() {
       });
     });
 
-
     heatMap.active
       .data(cellIds)
-      .attr('fill', '#31a354')
       .draw();
 
     summary.active
@@ -142,6 +117,14 @@ $(document).ready(function() {
       var data = [itemData[$(this).data('sequence')]];
       handleClick(event, data);
     });
+
+    $(".no-hover .sequence-cell").tipsy({
+      gravity: 's',
+      html: true,
+      title: function() {
+        return '<p>No 3D structure aviable for this exemplar</p>';
+      }
+    });
   }
 
   function mapClick(pairs) {
@@ -157,6 +140,14 @@ $(document).ready(function() {
       var data = $.extend({}, raw.items[key]);
       data['class'] = (!data.coordinates_exist ? 'no-hover' : '');
       data.icon = 'fa-' + (data.coordinates_exist ? 'check' : 'warning');
+      data.resolution = data.resolution || 'NA';
+
+      var selector = data.units.join(', ');
+      if (!data.units.length ||
+          (data.units[0] === "" && data.units[1] === "")) {
+        selector = '';
+      }
+      data.nts = selector;
 
       nts.push(data);
     });
@@ -182,12 +173,8 @@ $(document).ready(function() {
         max = d3.max(domain),
         scale = d3.scale.linear()
           .domain(domain)
-          // .range(["#67001f", "#b2182b", "#d6604d", "#f4a582", "#fddbc7",
-          //        "#f7f7f7", "#d1e5f0", "#92c5de", "#4393c3", "#2166ac",
-          //        "#053061"])
-          .range(["#2166ac", "#b2182b"])
+          .range(["#f7f7f7", "#053061"])
           .interpolate(d3.interpolateRgb);
-          // ;
 
     lengendRange.push(inc);
     var legend = generateLegend(lengendRange, function(value, isLast) {
@@ -204,7 +191,9 @@ $(document).ready(function() {
     summary.legend.data(legend);
 
     summary.cells
-      .fill(function(d) { return (d.exists ? scale(Math.min(d[attr], max)) : 'white'); });
+      .fill(function(d) {
+        return (d.exists ? scale(Math.min(d[attr], max)) : 'white');
+      });
 
     summary.legend
       .fill(function(d) { return scale(d.value); });
@@ -217,14 +206,22 @@ $(document).ready(function() {
       summary.legend.data(null);
       summary.cells.fill(function(d) {
         return (d.exists ? 'url(#' + d.name + ')' : 'white');
-      });
+      })
+      .attr('stroke', 'black')
+      .attr('stroke-opacity', 0.2);
 
-    } else if (name === 'count') {
-      var countMax = d3.min([summaryAttributeRanges.count[1], 400]);
-      summarizeRange([0, countMax], 1, 'count', 'Count: ');
+    } else {
+      summary.cells
+        .attr('stroke-opacity', 1)
+        .attr('stroke', 'white');
 
-    } else if (name === 'resolution') {
-      summarizeRange([4, 0], -0.01, 'resolution', 'Resolution: ');
+      if (name === 'count') {
+        var countMax = d3.min([summaryAttributeRanges.count[1], 400]);
+        summarizeRange([0, countMax], 1, 'count', 'Count: ');
+
+      } else if (name === 'resolution') {
+        summarizeRange([4, 0], -0.01, 'resolution', 'Resolution: ');
+      }
     }
 
     var missing = summary.data().filter(function(d) {
@@ -327,13 +324,14 @@ $(document).ready(function() {
   }
 
   function summarizeItems(items) {
-    summaryAttributeRanges = {count: [], resolution: []};
+    var ranges = {count: [], resolution: []};
     $.each(items, function(_, item) {
-      summaryAttributeRanges.count.push(item.count);
-      summaryAttributeRanges.resolution.push(item.resolution);
+      ranges.count.push(item.count);
+      ranges.resolution.push(item.resolution);
     });
-    summaryAttributeRanges.count = [0, d3.max(summaryAttributeRanges.count)];
-    summaryAttributeRanges.resolution = [0, d3.max(summaryAttributeRanges.resolution)];
+    ranges.count = [0, d3.max(ranges.count)];
+    ranges.resolution = [0, d3.max(ranges.resolution)];
+    return ranges;
   }
 
   function setUpSummary(family, items) {
@@ -341,7 +339,7 @@ $(document).ready(function() {
         data = aggregateItems(family, known, items),
         defFn = generateDefs(data);
 
-    summarizeItems(items);
+    summaryAttributeRanges = summarizeItems(items);
     summary.addDefinitions(defFn);
     summary.data(data);
     updateSummary();
@@ -394,6 +392,9 @@ $(document).ready(function() {
     });
   }
 
+  heatMap.active
+    .attr('fill', '#31a354');
+
   heatMap.missing
     .attr('fill', '#fd8d3c')
     .attr('opacity', 1)
@@ -401,10 +402,27 @@ $(document).ready(function() {
     .fraction(0.3)
     .rotation(false);
 
-  heatMap.cells.click(function(d, i) {
-    var pairs = heatMap.getPairsInRange(d, i);
-    mapClick(pairs.map(function(d) { return d.items[0]; }));
-  });
+  summary.labels.column
+    .attr('font-size', 20)
+    .rotate(false);
+
+  summary.labels.row
+    .attr('font-size', 20);
+
+  summary.missing
+    .fraction(0.1);
+
+  summary.active
+    .attr('fill-opacity', 0)
+    .attr('stroke', 'black')
+    .attr('stroke-width', 2);
+
+  heatMap.cells
+    .click(function(d, i) {
+      var pairs = heatMap.getPairsInRange(d, i);
+      mapClick(pairs.map(function(d) { return d.items[0]; }));
+    })
+    .fill(heatMap.cells.idiFill());
 
   summary.cells.click(function(d) {
     var known = heatMap.known();
@@ -416,7 +434,7 @@ $(document).ready(function() {
     return {value: idi, idi: idi, label: label, exists: true};
   }));
 
-  $('.chosen-select').chosen();
+  $('.chosen-select').chosen({search_contains: true});
   $('#family-selector').change(function() {
     var name = $(this).val();
     currentData = [];
