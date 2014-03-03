@@ -173,12 +173,8 @@ $(document).ready(function() {
         max = d3.max(domain),
         scale = d3.scale.linear()
           .domain(domain)
-          // .range(["#67001f", "#b2182b", "#d6604d", "#f4a582", "#fddbc7",
-          //        "#f7f7f7", "#d1e5f0", "#92c5de", "#4393c3", "#2166ac",
-          //        "#053061"])
-          .range(["#2166ac", "#b2182b"])
+          .range(["#f7f7f7", "#053061"])
           .interpolate(d3.interpolateRgb);
-          // ;
 
     lengendRange.push(inc);
     var legend = generateLegend(lengendRange, function(value, isLast) {
