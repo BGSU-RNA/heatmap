@@ -197,18 +197,23 @@ var RowLabel = augment(Label, function(parent) {
   'use strict';
 
   this.constructor = function(plot) {
-    parent.constructor.call(this, plot, 'row', {rotate: false});
+    parent.constructor.call(this, plot, 'row', {rotate: false, 'text-anchor': 'end'});
 
     this.preprocess = dispatch(plot, 'rows');
   };
 
-  this.transform = function() {
-    return "translate(-6," + this.cellSize() / 1.5 + ")";
+  this.transform = function() { return ''; };
+
+  this.x = function() {
+    return function() { return -6; };
   };
 
   this.y = function() {
     var cellSize = this.cellSize();
-    return function(_, i) { return i * cellSize; };
+    return function(_, i) {
+      var bbox = this.getBBox();
+      return i * cellSize + (cellSize/2) + bbox.height/2;
+    };
   };
 });
 
