@@ -1,3 +1,4 @@
+/*jshint devel: true */
 (function () {
   'use strict';
   /*global document, jmolScriptWait, jmolScript, $, window */
@@ -26,12 +27,16 @@
     this.styleMethod = options.styleMethod;
     this.superimposeMethod = options.superimposeMethod;
     this.id = options.id;
+    this.unit_ids = [];
+    this.data = null;
 
+    console.log(options);
     if (options.unit_ids) {
       this.unit_ids = options.unit_ids;
     } else if (options.attr && options.elem) {
       this.unit_ids = $(options.elem).data(options.attr);
     }
+
   }
 
   Model.prototype.bind = function() {
@@ -39,7 +44,7 @@
     this.$elem.on('click', function() { self.toggle(); });
   };
 
-  Model.prototype.load = function(show) {
+  Model.prototype.load = function() {
     var ids = this.unit_ids,
         self = this,
         request = {url: this.url(), type: 'POST', data: {coord : ids}};
@@ -51,7 +56,7 @@
     if (this.loaded) { return null; }
 
     return $.ajax(request).done(function(data) {
-      if (self.appendData(data) && show) {
+      if (self.appendData(data)) {
         self.show();
       }
     });
@@ -63,16 +68,22 @@
       this.loaded = true; // TODO: Better handling when loading fails
       return false;
     }
+    this.data = data;
+
     // TODO: Remove the usage of jmolScriptWait
-    jmolScriptWait("load DATA \"append structure\"\n" + data + 'end "append structure";');
+    // TODO: Consider using the JSON formatted data
+    var cmd = 'load DATA "append structure"\n' + data + '\nend "append structure";';
+    console.log('appended');
+    jmolScriptWait(cmd);
     this.loaded = true;
     modelCount += 1;
     this.modelNumber = modelCount;
+    console.log('set number ' + this.modelNumber);
     return true;
   };
 
   Model.prototype.loadingFailed = function() {
-    jmolScript('set echo top right; color echo red; echo Failed to load a model...;');
+    jmolScript('set echo top right; color echo red; echo Failed to load a model;');
   };
 
   Model.prototype.superimpose = function() {
@@ -92,19 +103,24 @@
   };
 
   Model.prototype.superimposeByPhophate = function() {
-    var model = this.modelNumber,
-        i = 0;
+    var model = this.modelNumber;
 
     if (this.superimposed || model === 1) { return; }
 
-    for (i = 0; i < 3; i++) {
-      // if the same number of phosphates, try to superimpose,
-      // otherwise take the first four phosphates
-      jmolScript('if ({*.P/' + model + '.1}.length == {*.P/1.1}) ' +
-        '{x=compare({*.P/' + model + '.1},{*.P/1.1});}' +
-        'else {x=compare({(*.P/' + model + '.1)[1][4]},{(*.P/1.1)[1][4]});};' +
-        'select ' + model + '.1,' + model + '.2; rotate selected @{x};');
-    }
+    console.log('superimposing', this);
+
+    // if the same number of phosphates, try to superimpose,
+    // otherwise take the first four phosphates
+    // var cmd = 'if ({*.P/' + model + '.1}.length == {*.P/1.1}.length) {\n' +
+    var cmd = ' x = compare {' + model + '.1} {1.1};\n' +
+       // ' x = compare {' + model + '.1} {1.1} SUBSET {*.P};\n' +
+      // '}\n' +
+    // ' else {\n' +
+    // ' x = compare({(*.P/' + model + '.1)[1][4]}, {(*.P/1.1)[1][4]});\n' +
+      // '};\n' +
+      'select ' + model + '.1,' + model + '.2;\nrotate @{x};';
+    console.log(cmd);
+    jmolScript(cmd);
 
     this.superimposed = true;
     return true;
@@ -146,7 +162,7 @@
         command = '';
 
     if (!this.loaded) {
-      this.load(true);
+      return this.load();
     }
     this.superimpose();
     this.style();
