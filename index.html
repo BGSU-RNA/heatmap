@@ -17,55 +17,25 @@
 
 <div id='content' class='container'>
   <div class='page-header'>
-    <h1>RNA Basepairs Catalog</h1>
+    <h1>RNA Basepair Catalog</h1>
   </div>
 
   <div id='about-container' class='row'>
 
-    <div class='col-md-4'>
-      <form role='form' id='select-family' class='form-horizontal' action=''>
-
-        <div class="form-group">
-          <label for='family-selector' class='col-md-2 control-label'>
-            Family
-          </label>
-          <div class='col-md-10'>
-            <select id='family-selector' class='chosen-select'>
-              <option value='cWW' selected>cis Watson-Crick/Watson-Crick (cWW)</option>
-              <option value='tWW'>trans Watson-Crick/Watson-Crick (tWW)</option>
-              <option value='cWH'>cis Watson-Crick/Hoogsteen (cWH)</option>
-              <option value='tWH'>trans Watson-Crick/Hoogsteen (tWH)</option>
-              <option value='cWS'>cis Watson-Crick/Sugar (cWS)</option>
-              <option value='tWS'>trans Watson-Crick/Sugar (tWS)</option>
-              <option value='cHH'>cis Hoogsteen/Hoogsteen (cHH)</option>
-              <option value='tHH'>trans Hoogsteen/Hoogsteen (tHH)</option>
-              <option value='cHS'>cis Hoogsteen/Sugar (cHS)</option>
-              <option value='tHS'>trans Hoogsteen/Sugar (tHS)</option>
-              <option value='cSS'>cis Sugar/Sugar (cSS)</option>
-              <option value='tSS'>trans Sugar/Sugar (tSS)</option>
-            </select>
-          </div>
-        </div>
-      </form>
-    </div>
-
-    <div class='col-md-7'>
+    <div class='col-md-12'>
 
       <p>
       View examples of each type of basepair observed or predicted to occur
       in RNA 3D structures from this page. Basepairs are organized in geometric
-      families according to the interacting base edges and the relative
+      families using the Leontis-Westhof classification. This groups basepairs 
+      according to the interacting base edges and the relative
       orientations of the glycosidic bonds attaching the bases to the sugars.
       H-bonds can form between Watson-Crick (W), Hoogsteen (H) or Sugar (S)
-      Edges in all combinations. Relative orientations are cis (c) or trans (t).
+      edges in all combinations. Relative orientations are cis (c) or trans (t).
       Select basepair families with the dropdown menu to view base combinations
       that form in each family. The interactive heat map shows geometric
       similarities of basepairs in each family and can be used to select
       instances to superpose in the 3D viewer window.
-      </p>
-
-      <p>
-      <i class='fa fa-warning'></i> = No 3D structure available
       </p>
 
     </div>
@@ -77,11 +47,34 @@
 
     <div class='col-md-6'>
       <form role='form' id='summary-controls' class='form-horizontal' action=''>
+
+          <div class="form-group">
+            <label for='family-selector' class='col-md-4 control-label'>
+              Family
+            </label>
+            <div class='col-md-7'>
+              <select id='family-selector' class='chosen-select'>
+                <option value='cWW' selected>cis Watson-Crick/Watson-Crick (cWW)</option>
+                <option value='tWW'>trans Watson-Crick/Watson-Crick (tWW)</option>
+                <option value='cWH'>cis Watson-Crick/Hoogsteen (cWH)</option>
+                <option value='tWH'>trans Watson-Crick/Hoogsteen (tWH)</option>
+                <option value='cWS'>cis Watson-Crick/Sugar (cWS)</option>
+                <option value='tWS'>trans Watson-Crick/Sugar (tWS)</option>
+                <option value='cHH'>cis Hoogsteen/Hoogsteen (cHH)</option>
+                <option value='tHH'>trans Hoogsteen/Hoogsteen (tHH)</option>
+                <option value='cHS'>cis Hoogsteen/Sugar (cHS)</option>
+                <option value='tHS'>trans Hoogsteen/Sugar (tHS)</option>
+                <option value='cSS'>cis Sugar/Sugar (cSS)</option>
+                <option value='tSS'>trans Sugar/Sugar (tSS)</option>
+              </select>
+            </div>
+          </div>
+
         <div class="form-group">
           <label for='coloring-selector' class='col-md-4 control-label'>
             Summarize Using
           </label>
-          <div class='col-md-6'>
+          <div class='col-md-7'>
             <select id='coloring-selector' class='chosen-select'>
               <option value="exemplar" selected>Exemplars</option>
               <option value="count">Count</option>
@@ -91,7 +84,15 @@
           </div>
         </div>
       </form>
+
       <div id="summary-table"></div>
+
+      <div class="col-md-12">
+        <p>
+        <i class='fa fa-warning'></i> = No 3D structure available
+        </p>
+      </div>
+
     </div>
 
     <div class='col-md-6'>
