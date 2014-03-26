@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+import os
+import re
+import sys
+import shutil
+
+
+def main(directory):
+    for filename in os.listdir(directory):
+        parts = filename.split('_')
+
+        if not re.match('^[ct][WSH]{2}$', parts[0], re.IGNORECASE):
+            continue
+
+        family_parts = list(parts[0])
+        if family_parts[1].lower() == family_parts[2].lower():
+            if family_parts[1] == family_parts[2]:
+                case_id = 0
+            elif family_parts[1] > family_parts[2]:
+                case_id = 1
+            else:
+                case_id = 2
+        else:
+            case_id = 0
+
+        family_parts[1:] = [p.upper() for p in family_parts[1:]]
+        family = ''.join(family_parts)
+        sequence = parts[1]
+
+        base = os.path.join('static', 'data', family)
+        path = os.path.join(base, '%s-%i.pdb' % (sequence, case_id))
+
+        if not os.path.exists(base):
+            os.makedirs(base)
+
+        full_path = os.path.join(directory, filename)
+        shutil.copy(full_path, path)
+
+if __name__ == '__main__':
+    main(sys.argv[1])

@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+
+import os
+import re
+import sys
+import shutil
+
+IMAGE_URL = 'static/img/{0}/{0}_{1}_exemplar.png'
+
+
+def main(directory):
+    for filename in os.listdir(directory):
+        if not re.match('[ct][WHS]{2} .*.png', filename):
+            continue
+
+        full_path = os.path.join(directory, filename)
+
+        parts = filename.split(' ')
+        family = parts[0]
+        parts = parts[1].split('_')
+        sequence = parts[1]
+        url = IMAGE_URL.format(family, sequence)
+
+        shutil.copy(full_path, url)
+
+
+if __name__ == '__main__':
+    main(sys.argv[1])

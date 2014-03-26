@@ -13,3 +13,7 @@
 tbody tr.no-hover:hover td { 
   background: none;
 } 
+
+.chosen-container .chosen-results { 
+  max-height: 300px; 
+}
