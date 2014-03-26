@@ -31,7 +31,6 @@ $(document).ready(function() {
     missingTemplate = Handlebars.compile(string);
   });
 
-
   function generateLegend(range, func) {
     var last = range[1] - range[2];
     return d3.range.apply(null, range).map(function(value) {
@@ -72,7 +71,25 @@ $(document).ready(function() {
       .draw();
 
     jsMolTools.showOnly(known.map(function(e) {
-      return { id: e.id, unit_ids: e.units.join(',') };
+      var parts = e.id.split('-'),
+          case_id = "0",
+          family = parts[0],
+          sequence = parts[1].toUpperCase();
+
+      if (family[1].toLowerCase() === family[2].toLowerCase()) {
+        if (family[1] !== family[2]) {
+          case_id = (family[1] > family[2] ? "1" : "2");
+        }
+      }
+      family = family[0] + family[1].toUpperCase() + family[2].toUpperCase();
+
+      return {
+        id: e.id,
+        unit_ids: e.units.join(','),
+        superimposeMethod: null,
+        url: 'static/data/' + family + '/' + sequence + '-' +
+          case_id + '.pdb',
+      };
     }));
 
     $('.jmol-toggle').removeClass('success');
