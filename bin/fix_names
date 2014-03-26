@@ -1,0 +1,6 @@
+#!/bin/sh
+
+for file in raw/*_data.txt; do
+  fixed=`echo "$file" | tr -d ' '`
+  mv "$file" "$fixed"
+done

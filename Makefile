@@ -1,16 +1,19 @@
-CSV=$(wildcard static/data/*.csv)
-JSON=$(patsubst %.csv,%.json,$(CSV))
+CSV=$(wildcard raw/*_data.txt)
+JSON=$(patsubst raw/%_data.txt,static/data/%.json,$(CSV))
 NAMES=$(notdir $(basename $(JSON)))
 HEAT_JS=static/js/heatmap.js
 HEAT_SRC=$(wildcard src/heatmap/*.js)
 
 .PHONY: test
 
-all: js data
+all: js data img
 
 data: $(JSON)
 
-static/data/%.json: bin/csv2json static/data/%.csv
+img:
+	bin/move-images raw
+
+static/data/%.json: bin/csv2json raw/%_data.txt
 	$^ > $@
 
 test:
