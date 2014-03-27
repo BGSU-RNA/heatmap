@@ -10,7 +10,7 @@ IMAGE_URL = 'static/img/{0}/{0}_{1}_exemplar.png'
 
 def main(directory):
     for filename in os.listdir(directory):
-        if not re.match('[ct][WHS]{2} .*.png', filename):
+        if not re.match('[ct][WHS]{2} .*.png', filename, re.IGNORECASE):
             continue
 
         full_path = os.path.join(directory, filename)
