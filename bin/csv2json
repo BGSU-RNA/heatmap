@@ -9,8 +9,36 @@ import shutil
 
 import itertools as it
 
+from sqlalchemy import Table
+from sqlalchemy import MetaData
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
 IMAGE_URL = 'static/img/{0}/{0}_{1}_exemplar.png'
 FRAGMENT_URL = 'static/data/{0}/{1}-{2}.pdb'
+
+
+with open('config.json', 'r') as raw:
+    config = json.load(raw)
+    engine = create_engine(config['db'])
+    DB = sessionmaker(bind=engine)
+    meta = MetaData()
+    MappingTable = Table('pdb_unit_id_correspondence', meta, autoload=True,
+                         autoload_with=engine)
+
+
+def convert_ids(ids):
+    ids = [id for id in ids if id]
+    if not ids:
+        return []
+    session = DB()
+    query = session.query(MappingTable.c.unit_id).\
+        filter(MappingTable.c.old_id.in_(ids))
+    results = [result[0] for result in query]
+    if len(results) != len(ids):
+        sys.stderr.write("Can't find all ids: %s\n" % ",".join(ids))
+        sys.exit(1)
+    return results
 
 
 def generate_data(header, rows):
@@ -22,7 +50,7 @@ def generate_data(header, rows):
         first = row['Base combination']
         family = row['Family']
         known = True
-        units = [row['NT1ID'], row['NT2ID']]
+        units = convert_ids([row['NT1ID'], row['NT2ID']])
         id_of = lambda seq: '%s-%s' % (family, seq)
         url = None
 
