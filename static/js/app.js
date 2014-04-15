@@ -217,7 +217,8 @@ $(document).ready(function() {
   }
 
   function updateSummary() {
-    var name = $("#coloring-selector").val();
+    // var name = $("#coloring-selector").val();
+    var name = "exemplar";
 
     if (name === 'exemplar') {
       summary.legend.data(null);
@@ -467,6 +468,7 @@ $(document).ready(function() {
     $(this).button('toggle');
   });
 
+  // loadFamily("exemplar");
   loadFamily($("#family-selector").val());
 
 });
