@@ -142,6 +142,17 @@ $(document).ready(function() {
         return '<p>No 3D structure aviable for this exemplar</p>';
       }
     });
+
+    var selector = ".header-content-container [data-header-name='{{name}}']";
+    selector = Handlebars.compile(selector);
+    $(".header").tipsy({
+      gravity: 's',
+      html: true,
+      title: function() {
+        var name = $(this).data('header-name');
+        return $(selector({name: name})).html();
+      }
+    });
   }
 
   function mapClick(pairs) {
