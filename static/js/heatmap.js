@@ -507,6 +507,7 @@ var HeatMap = augment(Object, function() {
         getSecondItem: function(d) { return d.items[1]; },
         getItems: function(d) { return d.items; },
         getID: function(d) { return d.id; },
+        allowRangeSelect: true,
       };
 
     this.ordered = accessor([]);
@@ -599,7 +600,7 @@ var HeatMap = augment(Object, function() {
           .filter(function(d) { return d.__row === d.__column; }),
         firsts = diagonal.map(function(d) { return getFirst(d); });
 
-    if (d.__row < d.__column) {
+    if (this.allowRangeSelect() && d.__row < d.__column) {
         var stop = firsts.indexOf(items[0]) + 1,
             start = firsts.indexOf(items[1]);
         return diagonal.slice(start, stop);

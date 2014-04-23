@@ -421,6 +421,8 @@ $(document).ready(function() {
     });
   }
 
+  heatMap.allowRangeSelect(false);
+
   heatMap.active
     .attr('fill', '#31a354');
 
