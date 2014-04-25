@@ -5,13 +5,20 @@
 
   <table class='table table-bordered table-hover table-condensed'>
     <thead>
+      <!-- <tr> -->
+      <!--   <th colspan="3"></th> -->
+      <!--   <th colspan="5">Exemplar</th> -->
+      <!-- </tr> -->
       <tr>
         <th class='header' data-header-name='sequence'>Sequence</th>
         <th class="header" data-header-name='idi'>Isostericity Group</th>
         <th class="header" data-header-name='count'>Non-Redundant Count</th>
-        <th class="header" data-header-name='pdb'>PDB</th>
-        <th class="header" data-header-name='resolution'>Resolution</th>
-        <th class='header' data-header-name='exemplar'>Exemplar Unit Ids</th>
+        <th class="header" data-header-name='pdb'>Exemplar PDB</th>
+        <th class="header" data-header-name='resolution'>Exemplar Resolution</th>
+        <th class='header' data-header-name='model'>Exemplar Model</th>
+        <th class='header' data-header-name='chains'>Exemplar Chains</th>
+        <th class='header' data-header-name='numbers'>Exemplar Numbers</th>
+        <th class='header' data-header-name='symmetry'>Exemplar Symmetry Operators</th>
       </tr>
     </thead>
 
@@ -24,7 +31,10 @@
         <td>{{count}}</td>
         <td>{{pdb}}</td>
         <td>{{resolution}}</td>
-        <td>{{nts}}</td>
+        <td>{{model}}</td>
+        <td>{{chains}}</td>
+        <td>{{numbers}}</td>
+        <td>{{sym_op}}</td>
       </tr>
       {{/each}}
     </tbody>
