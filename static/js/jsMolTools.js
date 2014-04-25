@@ -46,22 +46,11 @@
   };
 
   Model.prototype.load = function() {
-    var ids = this.unit_ids,
-        self = this,
-        request = {url: this.url(), type: 'POST', data: {coord : ids}};
-
-    if (this._url) {
-      request.type = 'GET';
-      delete request.data;
-    }
-
-    if (typeof(ids) !== 'string') {
-      request.data.coord = ids.join(',');
-    }
+    var self = this;
 
     if (this.loaded) { return null; }
 
-    return $.ajax(request).done(function(data) {
+    return $.get(this._url).done(function(data) {
       if (self.appendData(data)) {
         self.show();
       }
