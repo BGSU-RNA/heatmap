@@ -143,7 +143,7 @@
     if (!this.loaded) {
       return this.load();
     }
-    this.superimpose();
+    // this.superimpose();
     this.style();
 
     if (this.neighborhood) {
