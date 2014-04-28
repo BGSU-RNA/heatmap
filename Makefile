@@ -6,12 +6,15 @@ HEAT_SRC=$(wildcard src/heatmap/*.js)
 
 .PHONY: test
 
-all: js data img
+all: js data img pdb
 
 data: $(JSON)
 
 img:
 	bin/move-images raw
+
+pdb:
+	bin/move-fragments raw
 
 static/data/%.json: bin/csv2json raw/%_data.txt
 	$^ > $@
