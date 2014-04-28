@@ -1,0 +1,12 @@
+# Basepair catalog #
+
+The code for the new basepair catalog.
+
+# Importing #
+
+```sh
+$ cp ~/export/* raw/
+$ rm raw/rIB* raw/bif* raw/wat*
+$ bin/fix_names
+$ make img data pdb
+```
