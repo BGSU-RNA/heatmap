@@ -32,13 +32,13 @@ def convert_ids(ids):
     if not ids:
         return []
     session = DB()
-    query = session.query(MappingTable.c.unit_id).\
+    query = session.query(MappingTable.c.unit_id, MappingTable.c.old_id).\
         filter(MappingTable.c.old_id.in_(ids))
-    results = [result[0] for result in query]
+    results = {result[1]: result[0] for result in query}
     if len(results) != len(ids):
         sys.stderr.write("Can't find all ids: %s\n" % ",".join(ids))
         sys.exit(1)
-    return results
+    return [results[id] for id in ids]
 
 
 def generate_data(header, rows):
