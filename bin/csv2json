@@ -55,7 +55,7 @@ def generate_data(header, rows):
         url = None
 
         pdb = row['PDBID']
-        if row['Resolution'] == 'NaN':
+        if row['Resolution'] == 'NaN' or row['Resolution'] == '':
             resolution = None
         else:
             resolution = float(row['Resolution'])
@@ -120,7 +120,8 @@ def load_data(raw, family):
     reader = csv.reader(raw, delimiter=',')
     rows = [row for row in reader]
     header = rows.pop(0)
-    header.insert(9, 'distance')
+
+    assert len(header) == len(rows[0])
 
     sequences = filter(lambda seq: re.match('^[ACGU]{2}$', seq), header)
     if len(sequences) == len(set(sequences)):
