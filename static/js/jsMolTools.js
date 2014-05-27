@@ -37,7 +37,6 @@
         this.unit_ids = elem.data(options.attr);
       }
     }
-
   }
 
   Model.prototype.bind = function() {
@@ -62,11 +61,24 @@
 
     // TODO: Remove the usage of jmolScriptWait
     // TODO: Consider using the JSON formatted data
-    var cmd = 'load DATA "append structure"\n' + data + '\nend "append structure";';
-    jmolScriptWait(cmd);
-    this.loaded = true;
     modelCount += 1;
     this.modelNumber = modelCount;
+    var cmd = 'load DATA "append structure"\n' + data +
+        '\nend "append structure";\n' +
+        'select [U]/' + modelCount + '.1; color navy;' +
+        'select [G]/' + modelCount + '.1; color chartreuse;' +
+        'select [C]/' + modelCount + '.1; color gold;' +
+        'select [A]/' + modelCount + '.1; color red;' +
+        'select nucleic and ' + modelCount + '.2; color grey;' +
+        'select protein and ' + modelCount + '.2; color purple;' +
+        'select hetero  and ' + modelCount + '.2; color pink;' +
+        'select ' + modelCount + '.2; color translucent 0.8;' +
+        'select ' + modelCount + '.1,' + modelCount + '.2;' +
+        'spacefill off;' +
+        'center ' + modelCount + '.1;' +
+        'zoom {'  + modelCount + '.1} 0;';
+    jmolScriptWait(cmd);
+    this.loaded = true;
     return true;
   };
 
@@ -144,7 +156,7 @@
       return this.load();
     }
     // this.superimpose();
-    this.style();
+    // this.style();
 
     if (this.neighborhood) {
       command = 'frame *;display displayed or ' + model + '.1,' + model +
