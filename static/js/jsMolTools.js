@@ -59,7 +59,6 @@
   Model.prototype.appendData = function(data) {
     this.data = data;
 
-    // TODO: Remove the usage of jmolScriptWait
     // TODO: Consider using the JSON formatted data
     modelCount += 1;
     this.modelNumber = modelCount;
@@ -232,6 +231,10 @@
   }
 
   window.jsMolTools = {};
+
+  window.jsMolTools.clear = function() {
+    $.each(modelCache, function(id, model) { model.hide(); });
+  };
 
   window.jsMolTools.showOnly = function(data) {
     var visible = {};
