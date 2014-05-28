@@ -77,7 +77,7 @@
         'spacefill off;' +
         'center ' + modelCount + '.1;' +
         'zoom {'  + modelCount + '.1} 0;';
-    jmolScriptWait(cmd);
+    jmolScript(cmd);
     this.loaded = true;
     return true;
   };
