@@ -1,0 +1,26 @@
+#!/bin/sh
+
+# Summary: Run a server with a bad connection.
+# Usage ./serve
+# Help: This is a script to run a simple server that simulates having a bad
+# connection. This should help me track down bugs where things are not styled
+# right in jsmol. Will only work on OS X. The server will be on port 1234.
+#
+# I use [knod](https://github.com/moserrya/knod) as the server and the guide
+# from: http://barkingiguana.com/2009/12/04/simulating-slow-or-laggy-network-connections-in-os-x/
+
+port=1234
+
+echo 'adding pipe'
+sudo ipfw pipe 1 config delay 50ms
+sudo ipfw add 1 pipe 1 src-port $port
+sudo ipfw add 2 pipe 1 dst-port $port
+
+knod -p $port
+
+echo 'deleting pipe'
+sudo ipfw delete 1
+sudo ipfw delete 2
+sudo ipfw pipe 1 delete
+
+echo 'done'
