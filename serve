@@ -11,6 +11,8 @@
 
 port=1234
 
+rbenv 1.9.3-p392
+
 echo 'adding pipe'
 sudo ipfw pipe 1 config delay 50ms
 sudo ipfw add 1 pipe 1 src-port $port
