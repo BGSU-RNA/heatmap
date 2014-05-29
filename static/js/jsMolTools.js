@@ -233,8 +233,8 @@
   window.jsMolTools = {};
 
   window.jsMolTools.clear = function() {
-    $.each(modelCache, function(id, model) { model.hide(); });
-    JmolScript("select all; hide");
+    jmolScript("delete;");
+    modelCache = {};
   };
 
   window.jsMolTools.showOnly = function(data) {
