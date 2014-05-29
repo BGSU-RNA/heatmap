@@ -100,8 +100,8 @@ $(document).ready(function() {
     currentData = [];
     heatMap.active.clear();
     summary.active.clear();
-    jsMolTools.clear();
     $('.jmol-toggle').removeClass('success');
+    jsMolTools.clear();
   }
 
   function handleClick(event, items) {
