@@ -9,12 +9,26 @@
 # I use [knod](https://github.com/moserrya/knod) as the server and the guide
 # from: http://barkingiguana.com/2009/12/04/simulating-slow-or-laggy-network-connections-in-os-x/
 
+delay=50
 port=1234
 
-rbenv 1.9.3-p392
+while getopts ":d:p:" opt ; do
+  case $opt in
+    p )
+      port="$OPTARG"
+      ;;
+    d )
+      delay="$OPTARG"
+      ;;
+    * )
+      echo "Unknown option. See help."
+      exit 1
+      ;;
+  esac
+done
 
 echo 'adding pipe'
-sudo ipfw pipe 1 config delay 50ms
+sudo ipfw pipe 1 config delay "$delay"ms
 sudo ipfw add 1 pipe 1 src-port $port
 sudo ipfw add 2 pipe 1 dst-port $port
 
