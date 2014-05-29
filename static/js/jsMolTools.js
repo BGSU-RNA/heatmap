@@ -1,19 +1,20 @@
 /*jshint devel: true */
 (function () {
   'use strict';
-  /*global document, jmolScriptWait, jmolScript, $, window */
+  /*global document, jmolScript, $, window */
   // TODO: Remove deps on global stuff
 
   var modelCache = {},
       modelCount = 0,
       showNumbers = false,
+      shouldClear = true,
       defaults = {
         models: {
           styleMethod: 'sequence',
           superimposeMethod: 'phosphate',
           env: 'rna3dhub'
         },
-        controls: { }
+        controls: { },
       };
 
   function Model(options) {
@@ -233,8 +234,16 @@
   window.jsMolTools = {};
 
   window.jsMolTools.clear = function() {
-    jmolScript("delete;");
-    modelCache = {};
+    var clear = function() {
+      if (shouldClear) {
+        console.log("clearing");
+        jmolScript("delete;");
+        modelCache = {};
+      }
+    };
+    shouldClear = true;
+    clear();
+    $(document).ajaxStop(clear);
   };
 
   window.jsMolTools.showOnly = function(data) {
@@ -247,6 +256,7 @@
       visible[id] = model;
     });
 
+    shouldClear = false;
     $(document).ajaxStart(ShowLoadingMessage);
     $(document).ajaxStop(ShowDoneMessage);
 
