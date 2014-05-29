@@ -236,7 +236,6 @@
   window.jsMolTools.clear = function() {
     var clear = function() {
       if (shouldClear) {
-        console.log("clearing");
         jmolScript("delete;");
         modelCache = {};
       }
