@@ -482,7 +482,7 @@ $(document).ready(function() {
   $('#family-selector').change(function() {
     var name = $(this).val();
     currentData = [];
-    jsMolTools.showOnly([]);
+    jsMolTools.clear();
     loadFamily(name);
   });
   $('#coloring-selector').change(updateSummary);
