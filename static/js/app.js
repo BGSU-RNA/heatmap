@@ -139,6 +139,7 @@ $(document).ready(function() {
       gravity: 's',
       html: true,
       title: function() {
+        $(".tipsy").remove();
         return '<p>No 3D structure aviable for this exemplar</p>';
       }
     });
@@ -149,6 +150,7 @@ $(document).ready(function() {
       gravity: 's',
       html: true,
       title: function() {
+        $(".tipsy").remove();
         var name = $(this).data('header-name');
         return $(selector({name: name})).html();
       }
@@ -276,7 +278,10 @@ $(document).ready(function() {
     $("#summary-table .legend-cell").tipsy({
       gravity: 's',
       html: true,
-      title: function() { return exemplarHoverTemplate(this.__data__); }
+      title: function() {
+        $(".tipsy").remove();
+        return exemplarHoverTemplate(this.__data__);
+      }
     });
 
     $("#summary-table .cell").tipsy({
@@ -290,6 +295,7 @@ $(document).ready(function() {
       //   return [bbox.left + bbox.width/2, 10 * bbox.top];
       // },
       title: function() {
+        $(".tipsy").remove();
         var data = this.__data__,
             resolution = data.resolution || 'NA',
             context = $.extend({}, data, {resolution: resolution});
@@ -412,6 +418,7 @@ $(document).ready(function() {
         gravity: 's',
         html: true,
         title: function() {
+          $(".tipsy").remove();
           var data = $.extend({}, this.__data__);
           data.sequence = data.items.join(' ');
           data.idi = data.idi.toFixed(2);
@@ -423,6 +430,7 @@ $(document).ready(function() {
         gravity: 's',
         html: true,
         title: function() {
+          $(".tipsy").remove();
           var data = $.extend({}, this.__data__);
           data.sequence = '';
           data.idi = data.idi.toFixed(2);
