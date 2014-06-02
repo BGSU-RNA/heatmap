@@ -53,11 +53,13 @@
     return $.get(this._url).done(function(data) {
       if (self.appendData(data)) {
         self.show();
+        self.loaded = true;
       }
     });
   };
 
   Model.prototype.appendData = function(data) {
+    if (this.loaded) { return; }
     this.data = data;
 
     // TODO: Consider using the JSON formatted data
@@ -162,9 +164,8 @@
       command = 'frame *;display displayed or ' + model + '.1,' + model +
         '.2; center ' + model + '.1;';
     } else {
-      command = 'frame *;display displayed or '      + model + '.1;' +
-        'frame *;display displayed and not ' + model + '.2;' +
-        'center ' + model + '.1;';
+      command = 'frame *;display displayed or ' + model + '.1; center ' +
+        model + '.1;';
     }
     jmolScript(command);
     updateNumbers();
@@ -173,9 +174,10 @@
 
   Model.prototype.hide = function() {
     var model = this.modelNumber;
-    if (!this.loaded) { return; }
-    jmolScript('frame *;display displayed and not ' + model + '.1;' +
-      'display displayed and not ' + model + '.2;');
+    // if (!this.loaded) { return; }
+    // TODO: Is there a limit to model numbers?
+    var cmd = 'frame *;hide hidden or ' + model + '.0;';
+    jmolScript(cmd);
     this.hidden  = true;
   };
 
@@ -249,10 +251,9 @@
     var visible = {};
     data.forEach(function(datum) {
       var id = datum.id,
-          config = $.extend({}, defaults.models, datum),
-          model = modelCache[id] || new Model(config);
+          model = modelCache[id] || new Model($.extend({}, defaults.models, datum));
       modelCache[id] = model;
-      visible[id] = model;
+      visible[id] = true;
     });
 
     shouldClear = false;
@@ -261,7 +262,7 @@
 
     // TODO: Merge all requests and only display once to make things efficent
     $.each(modelCache, function(id, model) {
-      var fn = (!visible[id] ? model.hide : model.show);
+      var fn = (visible.hasOwnProperty(id) ? model.show : model.hide);
       fn.call(model);
     });
 
